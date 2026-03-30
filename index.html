@@ -955,10 +955,10 @@ function submitFreeWrite() {
   const title = document.getElementById('freeTitle').value.trim();
   const angle = document.getElementById('freeAngle').value.trim();
   const wordcount = document.getElementById('freeWordcount').value || 1500;
-  const extra = document.getElementById('freeExtra').value.trim();
-  if (!title) { alert('请填写选题'); return; }
-  if (!angle) { alert('请填写写作方向'); return; }
-  openDraftAndWrite({ title, angle, wordcount, extra });
+  const extra = (document.getElementById('freeExtra')?.value || '').trim();
+  if (!title) { alert('请填写选题/话题'); return; }
+  if (!angle) { alert('请填写写作方向/观点'); return; }
+  openDraftAndWrite({ title, angle, wordcount: parseInt(wordcount), extra });
 }
 
 // ── 出稿核心 ─────────────────────────────────────────────
@@ -1052,7 +1052,7 @@ async function startFactcheck() {
   btn.disabled = true;
   btn.textContent = '核查中…';
   report.classList.add('open');
-  items.innerHTML = '<div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--gold)">正在核查所有事实陈述，请稍候…</div>';
+  items.innerHTML = `<div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--gold)">正在核查所有事实陈述，请稍候…</div>`;
 
   const prompt = `请对以下评论文章进行严格的事实核查。
 
