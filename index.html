@@ -452,68 +452,49 @@ function setStatus(msg, type='') {
 
 // ── 热榜数据 ─────────────────────────────────────────────
 async function fetchHotList() {
-  const API_BASE = 'https://daily-hot-api-vercel-mu.vercel.app';
-
-  async function fetchPlatform(key, name) {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 12000);
-    try {
-      const res = await fetch(`${API_BASE}/${key}`, { signal: ctrl.signal })
-        .finally(() => clearTimeout(timer));
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const json = await res.json();
-      return (json.data || []).slice(0, 20).map((item, i) => ({
-        ...item,
-        platform: key,
-        platformName: name,
-        id: `${key}_${item.id || i}`,
-      }));
-    } catch(e) {
-      console.warn(`[${name}]`, e.message);
-      return [];
-    }
-  }
-
-  const [toutiao, zhihu] = await Promise.all([
-    fetchPlatform('toutiao', '今日头条'),
-    fetchPlatform('zhihu',   '知乎'),
-  ]);
-  return { toutiao, zhihu };
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 12000);
+  const res = await fetch(
+    'https://daily-hot-api-vercel-mu.vercel.app/toutiao',
+    { signal: ctrl.signal }
+  ).finally(() => clearTimeout(timer));
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const json = await res.json();
+  return (json.data || []).slice(0, 30);
 }
 // ── 渲染原始热榜 ─────────────────────────────────────────
-function renderRawList(platforms, selectedIds) {
+function renderRawList(items, selectedIds) {
   const el = document.getElementById('rawList');
-  const groups = Object.entries(platforms).map(([key, items]) => {
-    const rows = items.map((item, i) => {
-      const sel = selectedIds.has(item.id);
-      return `<div class="raw-item">
-        <span class="raw-rank ${i<3?'top':''}">${String(i+1).padStart(2,'0')}</span>
-        <span class="raw-title ${sel?'selected':''} ${!sel&&selectedIds.size>0?'raw-skip':''}">${item.title}</span>
-      </div>`;
-    }).join('');
-    const name = items[0]?.platformName || key;
-    return `<div class="raw-platform-header">${name} · ${items.length}条</div>${rows}`;
+  el.innerHTML = items.map((item, i) => {
+    const sel = selectedIds.has(item.id);
+    return `<div class="raw-item">
+      <span class="raw-rank ${i<3?'top':''}">${String(i+1).padStart(2,'0')}</span>
+      <span class="raw-title ${sel?'selected':''} ${!sel&&selectedIds.size>0?'raw-skip':''}">${item.title}</span>
+    </div>`;
   }).join('');
-  el.innerHTML = groups;
-  const total = Object.values(platforms).reduce((s, a) => s + a.length, 0);
-  document.getElementById('rawBadge').textContent = total + '条';
-  document.getElementById('statTotal').textContent = total;
+  document.getElementById('rawBadge').textContent = items.length + '条';
+  document.getElementById('statTotal').textContent = items.length;
 }
 // ── Claude 分析 ───────────────────────────────────────────
-async function analyzeWithClaude(platforms, apiKey) {
-  const items = Object.values(platforms).flat();
-  const titles = items.map((item, i) => `${i+1}. [${item.platformName}] ${item.title}`).join('\n');
+async function analyzeWithClaude(items, apiKey) {
+  const titles = items.map((item, i) => `${i+1}. ${item.title}`).join('\n');
 
-  const prompt = `以下是今日头条热榜前30条话题，请你扮演一位资深社会评论编辑，完成以下任务：
+  const prompt = `以下是今日头条热榜前30条话题，请你扮演一位资深评论编辑，用以下三个维度评估每个话题的可评论价值：
 
-1. 只筛选中国国内的社会新闻话题，入选标准：
-   - 必须是发生在中国境内的社会事件、民生议题、法律案件、公共政策
-   - 必须适合写社会评论（有争议性、有讨论价值、触及社会问题）
-   - 排除：国际新闻、港澳台新闻、娱乐八卦、体育赛事、科普知识、自然奇观、军事话题
+【评分维度】
+- 维度一：反差感与争议度（权重40%）
+  事件是否颠覆常识、打破预期、存在明显对立观点或道德争议
+- 维度二：深层拆解空间（权重40%）
+  话题背后是否有制度、人性、结构性原因可以挖掘，能否写出超越表面的分析
+- 维度三：读者利益相关性（权重20%）
+  普通读者是否会觉得"这和我有关"，能否引发共鸣或警觉
+
+【任务】
+1. 按三个维度加权计算综合得分（满分10分），筛选出6分及以上的话题
 2. 对每个入选话题：
-   - 给出评论价值评级（3=有价值 / 4=较高价值 / 5=高价值）
-   - 提供2-3个具体的写作角度（每个角度15-30字，要有观点倾向，聚焦社会问题本质，不要只是陈述问题）
-   - 标注话题类别（如：社会民生 / 法律司法 / 教育医疗 / 职场劳工 / 公共安全 / 政策民生 / 网络舆论 等）
+   - rating字段填写综合得分（6-10的整数，映射到3-5星：6-7=3星，8=4星，9-10=5星）
+   - 提供2-3个具体写作角度（每个角度15-30字，要有明确观点倾向，不只是陈述问题）
+   - 标注话题类别（如：社会民生 / 国际时事 / 娱乐文化 / 体育竞技 / 科技伦理 / 法律司法 / 经济政策 等）
 
 只返回JSON，格式如下：
 {
@@ -559,8 +540,7 @@ ${titles}`;
 }
 
 // ── 渲染结果 ──────────────────────────────────────────────
-function renderResults(platforms, analysis) {
-  const items = Object.values(platforms).flat();
+function renderResults(items, analysis) {
   const selected = analysis.selected || [];
   const el = document.getElementById('resultList');
 
@@ -586,8 +566,10 @@ function renderResults(platforms, analysis) {
     const heatStr = item.hot > 1e7 ? (item.hot/1e4).toFixed(0)+'万'
                   : item.hot > 1e4 ? (item.hot/1e4).toFixed(1)+'万'
                   : item.hot+'';
-    const stars = '★'.repeat(s.rating) + '☆'.repeat(5 - s.rating);
-    const ratingText = s.rating >= 5 ? '强烈推荐' : s.rating >= 4 ? '值得一写' : '可以考虑';
+    // rating是6-10的综合得分，映射到3-5星
+    const stars_count = s.rating >= 9 ? 5 : s.rating >= 8 ? 4 : 3;
+    const stars = '★'.repeat(stars_count) + '☆'.repeat(5 - stars_count);
+    const ratingText = s.rating >= 9 ? '强烈推荐' : s.rating >= 8 ? '值得一写' : '可以考虑';
 
     return `<div class="topic-card" style="animation-delay:${i*0.06}s">
       <div class="card-rank ${i<3?'top':''}">${String(i+1).padStart(2,'0')}</div>
@@ -595,7 +577,7 @@ function renderResults(platforms, analysis) {
         <div class="card-title">
           <a href="${item.url}" target="_blank">${item.title}</a>
         </div>
-        <div class="card-rating rating-${s.rating}">
+        <div class="card-rating rating-${stars_count}">
           <span class="rating-stars">${stars}</span>
           <span class="rating-label">${ratingText}</span>
         </div>
@@ -607,7 +589,6 @@ function renderResults(platforms, analysis) {
             </div>`).join('')}
         </div>
         <div class="card-tags">
-          <span class="tag">${items[s.index-1]?.platformName || ''}</span>
           <span class="tag">${s.category || '时事'}</span>
           <span class="tag">热度 ${heatStr}</span>
         </div>
@@ -625,7 +606,7 @@ function renderResults(platforms, analysis) {
   document.getElementById('resultCount').textContent = `${selected.length} 个话题`;
 
   // 更新侧栏高亮
-  renderRawList(platforms, selectedIds);
+  renderRawList(items, selectedIds);
 }
 
 // ── 主流程 ────────────────────────────────────────────────
@@ -649,21 +630,20 @@ async function startAnalysis() {
         <div class="progress-bar"><div class="progress-fill"></div></div>
       </div>`;
 
-    const platforms = await fetchHotList();
-    renderRawList(platforms, new Set());
+    const items = await fetchHotList();
+    renderRawList(items, new Set());
 
     // Step 2: Claude 分析
-    const total = Object.values(platforms).reduce((s,a)=>s+a.length,0);
-    setStatus(`已获取 ${total} 条热榜 · 正在分析评论价值…`, 'running');
+    setStatus(`已获取 ${items.length} 条热榜 · 正在分析评论价值…`, 'running');
     document.getElementById('resultList').innerHTML = `
       <div class="progress-wrap">
-        <div class="progress-label">CLAUDE ANALYZING · ${total} TOPICS</div>
+        <div class="progress-label">CLAUDE ANALYZING · ${items.length} TOPICS</div>
         <div class="progress-bar"><div class="progress-fill"></div></div>
       </div>`;
-    const analysis = await analyzeWithClaude(platforms, apiKey);
+    const analysis = await analyzeWithClaude(items, apiKey);
 
     // Step 3: 渲染
-    renderResults(platforms, analysis);
+    renderResults(items, analysis);
     setStatus(`分析完成 · ${analysis.selected?.length || 0} 个话题值得写`, 'done');
 
   } catch(e) {
