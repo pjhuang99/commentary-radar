@@ -1022,7 +1022,7 @@ function copyDraft() {
   });
 }
 
-// ── 事实核查 ──────────────────────────────────────────────
+// ── 事实核查（纯文本格式，无 JSON 解析风险）─────────────
 async function startFactcheck() {
   const apiKey = document.getElementById('claudeKey').value.trim();
   const draftText = document.getElementById('draftBody').textContent;
@@ -1033,85 +1033,82 @@ async function startFactcheck() {
   btn.disabled = true;
   btn.textContent = '核查中…';
   report.classList.add('open');
-  items.innerHTML = `<div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--gold)">正在核查所有事实陈述，请稍候…</div>`;
+  items.innerHTML = '<div style="font-family:monospace;font-size:0.7rem;color:var(--gold)">正在核查所有事实陈述，请稍候…</div>';
 
-  const prompt = `请对以下评论文章进行严格的事实核查。
+  // 第一步：纯文本格式核查报告
+  const checkPrompt = `请对以下评论文章进行事实核查。
 
-任务：
-1. 找出文章中所有具体的事实性陈述（数据、时间、人名、地名、事件经过、统计数字等）
-2. 逐一核查是否准确
-3. 对有误或存疑的内容，给出正确信息并说明理由
-4. 对核查无误的关键事实也简要确认
+用固定格式输出，每个问题占一行，用前缀区分：
+- 发现错误时：ERROR|原文表述|正确表述|说明原因
+- 核查无误时：OK|已核实的事实陈述
+- 如无任何事实性内容可核查：NONE
 
-只返回JSON，格式如下：
-{
-  "issues": [
-    {
-      "original": "原文中的错误表述",
-      "corrected": "正确的表述",
-      "note": "说明/来源依据"
-    }
-  ],
-  "verified": [
-    "核查无误的关键事实1",
-    "核查无误的关键事实2"
-  ],
-  "revised_article": "根据核查结果修改后的完整文章正文"
-}
+只输出这些行，不要任何其他文字或解释。
 
-如果没有发现任何错误，issues数组为空，revised_article与原文相同。
-
-文章内容：
+文章：
 ${draftText}`;
 
   try {
-    const res = await fetch('/api/claude', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        apiKey,
-        payload: {
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 4000,
-          messages: [{ role: 'user', content: prompt }]
+    const raw = await callClaude(apiKey, checkPrompt, 2000);
+    const lines_result = raw.trim().split('\n').filter(l => l.trim());
+
+    const issues = [];
+    const verified = [];
+
+    for (const line of lines_result) {
+      if (line.startsWith('ERROR|')) {
+        const parts = line.split('|');
+        if (parts.length >= 4) {
+          issues.push({ original: parts[1], corrected: parts[2], note: parts[3] });
         }
-      })
-    });
+      } else if (line.startsWith('OK|')) {
+        verified.push(line.slice(3));
+      }
+    }
 
-    if (!res.ok) throw new Error('API 错误 ' + res.status);
-    const data = await res.json();
-    const text = data.content?.[0]?.text || '';
-    const clean = text.replace(/```json|```/g, '').trim();
-    const result = JSON.parse(clean);
-
-    // 渲染核查报告
+    // 渲染报告
     let html = '';
-    if (result.issues?.length) {
-      html += result.issues.map(it => `
+    if (issues.length) {
+      html += issues.map(it => `
         <div class="fact-item">
           <div class="fact-original">✗ 原文：${it.original}</div>
           <div class="fact-corrected">✓ 修正：${it.corrected}</div>
           <div class="fact-note">📌 ${it.note}</div>
         </div>`).join('');
     }
-    if (result.verified?.length) {
-      html += result.verified.map(v =>
-        `<div class="fact-ok">✓ 已核实：${v}</div>`
-      ).join('');
+    if (verified.length) {
+      html += verified.map(v => `<div class="fact-ok">✓ 已核实：${v}</div>`).join('');
     }
-    if (!result.issues?.length && !result.verified?.length) {
+    if (!issues.length && !verified.length) {
       html = '<div class="fact-ok">✓ 未发现明显事实性错误</div>';
     }
     items.innerHTML = html;
 
-    // 如果有修正，更新正文
-    if (result.issues?.length && result.revised_article) {
-      document.getElementById('draftBody').textContent = result.revised_article;
-      const wc = result.revised_article.replace(/\s/g, '').length;
+    // 第二步：有错误才修订正文
+    if (issues.length) {
+      items.innerHTML += '<div style="font-family:monospace;font-size:0.7rem;color:var(--gold);margin-top:10px">正在修订正文…</div>';
+
+      const corrections = issues.map((it, i) =>
+        `${i+1}. 将"${it.original}"改为"${it.corrected}"`
+      ).join('\n');
+
+      const revisePrompt = `请根据以下修改意见修订文章，只输出修订后的完整正文，不要任何说明。
+
+修改意见：
+${corrections}
+
+原文：
+${draftText}`;
+
+      const revised = await callClaude(apiKey, revisePrompt, 4000);
+      document.getElementById('draftBody').textContent = revised;
+      const wc = revised.replace(/\s/g, '').length;
       document.getElementById('draftWordCount').textContent = `共 ${wc} 字（已按核查结果修订）`;
+      items.innerHTML = items.innerHTML.replace(/<div[^>]*>正在修订正文…<\/div>/, '');
     }
 
     btn.textContent = '核查完成 ✓';
+
   } catch(e) {
     items.innerHTML = `<div style="color:var(--accent);font-size:0.78rem">核查失败：${e.message}</div>`;
     btn.disabled = false;
