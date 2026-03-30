@@ -653,14 +653,13 @@ async function startAnalysis() {
     renderRawList(platforms, new Set());
 
     // Step 2: Claude 分析
+    const total = Object.values(platforms).reduce((s,a)=>s+a.length,0);
     setStatus(`已获取 ${total} 条热榜 · 正在分析评论价值…`, 'running');
     document.getElementById('resultList').innerHTML = `
       <div class="progress-wrap">
         <div class="progress-label">CLAUDE ANALYZING · ${total} TOPICS</div>
         <div class="progress-bar"><div class="progress-fill"></div></div>
       </div>`;
-
-    const total = Object.values(platforms).reduce((s,a)=>s+a.length,0);
     const analysis = await analyzeWithClaude(platforms, apiKey);
 
     // Step 3: 渲染
