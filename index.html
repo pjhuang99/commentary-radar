@@ -992,27 +992,8 @@ ${extra ? `【补充要求】${extra}` : ''}
 - 控制在${wordcount}字左右`;
 
   try {
-    const res = await fetch('/api/claude', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        apiKey,
-        payload: {
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 4000,
-          messages: [{ role: 'user', content: prompt }]
-        }
-      })
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || 'API 错误 ' + res.status);
-    }
-
-    const data = await res.json();
-    const text = data.content?.[0]?.text || '';
-    const wordCount = text.replace(/\s/g, '').length;
+    const text = await callClaude(apiKey, prompt, 4000);
+    const wordCount = text.replace(/[\s\n]/g, '').length;
 
     document.getElementById('draftBody').textContent = text;
     document.getElementById('draftWordCount').textContent = `共 ${wordCount} 字`;
