@@ -1039,6 +1039,28 @@ function submitFreeWrite() {
   openDraftAndWrite({ title, angle, wordcount: parseInt(wordcount), extra });
 }
 
+// ── 公共 Claude 调用 ─────────────────────────────────────
+async function callClaude(apiKey, prompt, maxTokens) {
+  const res = await fetch('/api/claude', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      apiKey,
+      payload: {
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: maxTokens || 2000,
+        messages: [{ role: 'user', content: prompt }]
+      }
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'API 错误 ' + res.status);
+  }
+  const data = await res.json();
+  return data.content?.[0]?.text || '';
+}
+
 // ── 出稿核心 ─────────────────────────────────────────────
 async function openDraftAndWrite({ title, angle, wordcount, extra }) {
   const apiKey = document.getElementById('claudeKey').value.trim();
