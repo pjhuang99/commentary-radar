@@ -818,39 +818,8 @@ function renderResults(items, analysis) {
           </div>
           <span class="heat-val">${heatStr}</span>
         </div>
-        <button class="btn-write" data-panel="panel-${i}" onclick="toggleWritePanel(this.dataset.panel)">✍ 写这篇</button>
-        <div class="write-panel" id="panel-${i}" data-idx="${i}">
-          <div class="write-panel-title">
-            写稿设置
-            <button data-panel="panel-${i}" onclick="toggleWritePanel(this.dataset.panel)">✕</button>
-          </div>
-          <div class="angle-select">
-            <div style="font-size:0.6rem;color:var(--muted);margin-bottom:4px">选择写作角度</div>
-            ${(s.angles||[]).map((a,j) => `
-              <label class="angle-option ${j===0?'selected':''}">
-                <input type="radio" name="angle-${i}" value="${j}" ${j===0?'checked':''} onchange="selectAngle(this)">
-                <span class="angle-option-text">${a}</span>
-              </label>`).join('')}
-            <label class="angle-option">
-              <input type="radio" name="angle-${i}" value="custom" onchange="selectAngle(this)">
-              <span class="angle-option-text" style="color:var(--muted)">自定义角度…</span>
-            </label>
-          </div>
-          <div class="write-row" id="custom-row-${i}" style="display:none">
-            <label>自定义角度</label>
-            <input class="write-input" id="custom-angle-${i}" placeholder="输入你的写作角度或观点方向…">
-          </div>
-          <div class="write-row">
-            <label>目标字数</label>
-            <input class="write-num" id="wordcount-${i}" type="number" value="1500" min="500" max="5000" step="500">
-            <label style="margin-left:4px">字</label>
-          </div>
-          <div>
-            <label class="field-label">补充要求（选填）</label>
-            <textarea class="write-input" id="extra-${i}" rows="2" placeholder="如：语气犀利、结尾反转、引用某个案例…"></textarea>
-          </div>
-          <button class="btn-submit-write" data-idx="${i}" onclick="submitWriteFromPanel(this)">▶ 开始写稿</button>
-        </div>
+        <button class="btn-write" onclick="openWritePanel(${i})">✍ 写这篇</button>
+        <div class="write-panel" id="panel-${i}"></div>
       </div>
     </div>`;
   }).join('')}</div>`;
@@ -919,6 +888,37 @@ async function startAnalysis() {
 }
 
 // ── 写稿面板交互 ─────────────────────────────────────────
+function openWritePanel(idx) {
+  const panel = document.getElementById('panel-' + idx);
+  if (panel.classList.contains('open')) {
+    panel.classList.remove('open');
+    return;
+  }
+  // 动态生成面板内容
+  const data = window._topicData?.[idx];
+  const angles = data?.angles || [];
+  let anglesHtml = angles.map(function(a, j) {
+    return '<label class="angle-option ' + (j===0?'selected':'') + '">'
+      + '<input type="radio" name="angle-' + idx + '" value="' + j + '" ' + (j===0?'checked':'') + ' onchange="selectAngle(this)">'
+      + '<span class="angle-option-text">' + a + '</span>'
+      + '</label>';
+  }).join('');
+  anglesHtml += '<label class="angle-option">'
+    + '<input type="radio" name="angle-' + idx + '" value="custom" onchange="selectAngle(this)">'
+    + '<span class="angle-option-text" style="color:var(--muted)">自定义角度…</span>'
+    + '</label>';
+
+  panel.innerHTML = ''
+    + '<div class="write-panel-title">写稿设置 <button onclick="openWritePanel(' + idx + ')">✕</button></div>'
+    + '<div class="angle-select"><div style="font-size:0.6rem;color:var(--muted);margin-bottom:4px">选择写作角度</div>' + anglesHtml + '</div>'
+    + '<div class="write-row" id="custom-row-' + idx + '" style="display:none"><label>自定义角度</label><input class="write-input" id="custom-angle-' + idx + '" placeholder="输入你的写作角度…"></div>'
+    + '<div class="write-row"><label>目标字数</label><input class="write-num" id="wordcount-' + idx + '" type="number" value="1500" min="500" max="5000" step="500"><label style="margin-left:4px">字</label></div>'
+    + '<div><label class="field-label">补充要求（选填）</label><textarea class="write-input" id="extra-' + idx + '" rows="2" placeholder="如：语气犀利、结尾反转…"></textarea></div>'
+    + '<button class="btn-submit-write" onclick="submitWriteFromPanel(' + idx + ')">▶ 开始写稿</button>';
+
+  panel.classList.add('open');
+}
+
 function toggleWritePanel(id) {
   const panel = document.getElementById(id);
   panel.classList.toggle('open');
@@ -937,8 +937,7 @@ function selectAngle(radio) {
 }
 
 // ── 从卡片写稿 ────────────────────────────────────────────
-function submitWriteFromPanel(btn) {
-  const idx = btn.dataset.idx;
+function submitWriteFromPanel(idx) {
   const data = window._topicData?.[idx];
   if (!data) { alert('话题数据丢失，请重新分析'); return; }
 
