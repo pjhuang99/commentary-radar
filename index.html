@@ -616,6 +616,40 @@
   </div>
 </div>
 
+<!-- 写稿设置弹窗 -->
+<div id="writeDialog" style="display:none;position:fixed;inset:0;background:rgba(26,18,8,0.7);z-index:200;align-items:center;justify-content:center;">
+  <div style="background:var(--paper);width:100%;max-width:520px;border:2px solid var(--ink);padding:24px;position:relative;">
+    <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+      ✍ 写稿设置
+      <button onclick="closeWriteDialog()" style="position:absolute;top:16px;right:16px;background:none;border:none;cursor:pointer;font-size:1rem;color:var(--muted);">✕</button>
+    </div>
+    <div style="margin-bottom:12px;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);margin-bottom:6px;">选题</div>
+      <div id="dialogTitle" style="font-size:0.9rem;font-weight:600;line-height:1.5;color:var(--ink);"></div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);margin-bottom:6px;">写作角度</div>
+      <div id="dialogAngles"></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;">
+      <label style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);">目标字数</label>
+      <input id="dialogWordcount" type="number" value="1500" min="500" max="5000" step="500"
+        style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;border:1px solid var(--border);background:var(--paper);padding:5px 8px;width:90px;outline:none;">
+      <span style="font-size:0.8rem;color:var(--muted);">字</span>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);margin-bottom:6px;">补充要求（选填）</div>
+      <textarea id="dialogExtra" rows="2"
+        style="font-family:'Noto Serif SC',serif;font-size:0.82rem;border:1px solid var(--border);background:var(--paper);padding:8px 10px;width:100%;outline:none;resize:vertical;"
+        placeholder="如：语气犀利、结尾反转、引用某个案例…"></textarea>
+    </div>
+    <button onclick="submitFromDialog()"
+      style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;font-weight:600;letter-spacing:0.5px;background:var(--ink);color:var(--paper);border:none;padding:10px 28px;cursor:pointer;">
+      ▶ 开始写稿
+    </button>
+  </div>
+</div>
+
 <!-- 出稿遮罩 -->
 <div class="draft-overlay" id="draftOverlay" onclick="closeDraftOnBg(event)">
   <div class="draft-box">
@@ -818,8 +852,7 @@ function renderResults(items, analysis) {
           </div>
           <span class="heat-val">${heatStr}</span>
         </div>
-        <button class="btn-write" onclick="openWritePanel(${i})">✍ 写这篇</button>
-        <div class="write-panel" id="panel-${i}"></div>
+        <button class="btn-write" id="write-btn-${i}">✍ 写这篇</button>
       </div>
     </div>`;
   }).join('')}</div>`;
@@ -830,6 +863,13 @@ function renderResults(items, analysis) {
     const item = items[s.index - 1];
     if (item) window._topicData[i] = { title: item.title, angles: s.angles || [] };
   });
+  // 用 addEventListener 绑定写稿按钮（避免 onclick 属性的引号问题）
+  setTimeout(function() {
+    selected.forEach(function(s, i) {
+      var btn = document.getElementById('write-btn-' + i);
+      if (btn) btn.addEventListener('click', function() { openWriteDialog(i); });
+    });
+  }, 100);
   document.getElementById('statSelected').textContent = selected.length;
   document.getElementById('resultCount').textContent = `${selected.length} 个话题`;
 
@@ -888,41 +928,70 @@ async function startAnalysis() {
 }
 
 // ── 写稿面板交互 ─────────────────────────────────────────
-function openWritePanel(idx) {
-  const panel = document.getElementById('panel-' + idx);
-  if (panel.classList.contains('open')) {
-    panel.classList.remove('open');
-    return;
-  }
-  // 动态生成面板内容
+function openWriteDialog(idx) {
   const data = window._topicData?.[idx];
-  const angles = data?.angles || [];
-  let anglesHtml = angles.map(function(a, j) {
-    return '<label class="angle-option ' + (j===0?'selected':'') + '">'
-      + '<input type="radio" name="angle-' + idx + '" value="' + j + '" ' + (j===0?'checked':'') + ' onchange="selectAngle(this)">'
-      + '<span class="angle-option-text">' + a + '</span>'
-      + '</label>';
-  }).join('');
-  anglesHtml += '<label class="angle-option">'
-    + '<input type="radio" name="angle-' + idx + '" value="custom" onchange="selectAngle(this)">'
-    + '<span class="angle-option-text" style="color:var(--muted)">自定义角度…</span>'
-    + '</label>';
+  if (!data) { alert('话题数据未加载，请重新分析'); return; }
+  window._currentWriteIdx = idx;
 
-  panel.innerHTML = ''
-    + '<div class="write-panel-title">写稿设置 <button onclick="openWritePanel(' + idx + ')">✕</button></div>'
-    + '<div class="angle-select"><div style="font-size:0.6rem;color:var(--muted);margin-bottom:4px">选择写作角度</div>' + anglesHtml + '</div>'
-    + '<div class="write-row" id="custom-row-' + idx + '" style="display:none"><label>自定义角度</label><input class="write-input" id="custom-angle-' + idx + '" placeholder="输入你的写作角度…"></div>'
-    + '<div class="write-row"><label>目标字数</label><input class="write-num" id="wordcount-' + idx + '" type="number" value="1500" min="500" max="5000" step="500"><label style="margin-left:4px">字</label></div>'
-    + '<div><label class="field-label">补充要求（选填）</label><textarea class="write-input" id="extra-' + idx + '" rows="2" placeholder="如：语气犀利、结尾反转…"></textarea></div>'
-    + '<button class="btn-submit-write" onclick="alert(\"idx:\"+' + idx + '); submitWriteFromPanel(' + idx + ')">▶ 开始写稿</button>';
+  document.getElementById('dialogTitle').textContent = data.title;
 
-  panel.classList.add('open');
+  // 渲染角度选项
+  var anglesHtml = '';
+  (data.angles || []).forEach(function(a, j) {
+    anglesHtml += '<label style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;cursor:pointer;">'
+      + '<input type="radio" name="dialogAngle" value="' + j + '" ' + (j===0?'checked':'') + ' style="margin-top:3px;accent-color:var(--gold);">'
+      + '<span style="font-size:0.82rem;line-height:1.5;">' + a + '</span></label>';
+  });
+  anglesHtml += '<label style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;cursor:pointer;">'
+    + '<input type="radio" name="dialogAngle" value="custom" style="margin-top:3px;accent-color:var(--gold);">'
+    + '<span style="font-size:0.82rem;color:var(--muted);">自定义角度…</span></label>'
+    + '<input id="customAngleInput" type="text" placeholder="输入自定义角度…"'
+    + ' style="display:none;width:100%;font-size:0.82rem;border:1px solid var(--border);padding:5px 8px;margin-top:2px;outline:none;">';
+  document.getElementById('dialogAngles').innerHTML = anglesHtml;
+
+  // 监听自定义角度
+  document.querySelectorAll('input[name="dialogAngle"]').forEach(function(r) {
+    r.addEventListener('change', function() {
+      var ci = document.getElementById('customAngleInput');
+      if (ci) ci.style.display = r.value === 'custom' ? 'block' : 'none';
+    });
+  });
+
+  document.getElementById('dialogExtra').value = '';
+  document.getElementById('dialogWordcount').value = 1500;
+  var dlg = document.getElementById('writeDialog');
+  dlg.style.display = 'flex';
 }
 
-function toggleWritePanel(id) {
-  const panel = document.getElementById(id);
-  panel.classList.toggle('open');
+function closeWriteDialog() {
+  document.getElementById('writeDialog').style.display = 'none';
 }
+
+function submitFromDialog() {
+  var idx = window._currentWriteIdx;
+  var data = window._topicData?.[idx];
+  if (!data) return;
+
+  var angle = '';
+  document.querySelectorAll('input[name="dialogAngle"]').forEach(function(r) {
+    if (r.checked) {
+      if (r.value === 'custom') {
+        angle = (document.getElementById('customAngleInput')?.value || '').trim();
+      } else {
+        angle = data.angles[parseInt(r.value)] || '';
+      }
+    }
+  });
+  if (!angle) { alert('请选择或填写写作角度'); return; }
+
+  var wordcount = parseInt(document.getElementById('dialogWordcount').value) || 1500;
+  var extra = document.getElementById('dialogExtra').value.trim();
+
+  closeWriteDialog();
+  openDraftAndWrite({ title: data.title, angle: angle, wordcount: wordcount, extra: extra });
+}
+
+
 
 function selectAngle(radio) {
   // 高亮选中
