@@ -818,14 +818,14 @@ function renderResults(items, analysis) {
           </div>
           <span class="heat-val">${heatStr}</span>
         </div>
-        <button class="btn-write" onclick="toggleWritePanel('panel-${i}')">✍ 写这篇</button>
-        <div class="write-panel" id="panel-${i}">
+        <button class="btn-write" data-panel="panel-${i}" onclick="toggleWritePanel(this.dataset.panel)">✍ 写这篇</button>
+        <div class="write-panel" id="panel-${i}" data-idx="${i}">
           <div class="write-panel-title">
             写稿设置
-            <button onclick="toggleWritePanel('panel-${i}')">✕</button>
+            <button data-panel="panel-${i}" onclick="toggleWritePanel(this.dataset.panel)">✕</button>
           </div>
           <div class="angle-select">
-            <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted);margin-bottom:2px;">选择写作角度</div>
+            <div style="font-size:0.6rem;color:var(--muted);margin-bottom:4px">选择写作角度</div>
             ${(s.angles||[]).map((a,j) => `
               <label class="angle-option ${j===0?'selected':''}">
                 <input type="radio" name="angle-${i}" value="${j}" ${j===0?'checked':''} onchange="selectAngle(this)">
@@ -849,12 +849,18 @@ function renderResults(items, analysis) {
             <label class="field-label">补充要求（选填）</label>
             <textarea class="write-input" id="extra-${i}" rows="2" placeholder="如：语气犀利、结尾反转、引用某个案例…"></textarea>
           </div>
-          <button class="btn-submit-write" onclick="submitWrite(${i}, '${item.title.replace(/'/g,"\'")}', ${JSON.stringify(s.angles||[]).replace(/'/g,"\'")})">▶ 开始写稿</button>
+          <button class="btn-submit-write" data-idx="${i}" onclick="submitWriteFromPanel(this)">▶ 开始写稿</button>
         </div>
       </div>
     </div>`;
   }).join('')}</div>`;
 
+  // 存储话题数据供写稿用
+  window._topicData = {};
+  selected.forEach((s, i) => {
+    const item = items[s.index - 1];
+    if (item) window._topicData[i] = { title: item.title, angles: s.angles || [] };
+  });
   document.getElementById('statSelected').textContent = selected.length;
   document.getElementById('resultCount').textContent = `${selected.length} 个话题`;
 
@@ -931,7 +937,11 @@ function selectAngle(radio) {
 }
 
 // ── 从卡片写稿 ────────────────────────────────────────────
-function submitWrite(idx, title, angles) {
+function submitWriteFromPanel(btn) {
+  const idx = btn.dataset.idx;
+  const data = window._topicData?.[idx];
+  if (!data) { alert('话题数据丢失，请重新分析'); return; }
+
   const radios = document.querySelectorAll(`input[name="angle-${idx}"]`);
   let angle = '';
   radios.forEach(r => {
@@ -939,7 +949,7 @@ function submitWrite(idx, title, angles) {
       if (r.value === 'custom') {
         angle = document.getElementById(`custom-angle-${idx}`)?.value?.trim() || '';
       } else {
-        angle = angles[parseInt(r.value)] || '';
+        angle = data.angles[parseInt(r.value)] || '';
       }
     }
   });
@@ -947,7 +957,7 @@ function submitWrite(idx, title, angles) {
   const extra = document.getElementById(`extra-${idx}`)?.value?.trim() || '';
 
   if (!angle) { alert('请选择或填写写作角度'); return; }
-  openDraftAndWrite({ title, angle, wordcount, extra });
+  openDraftAndWrite({ title: data.title, angle, wordcount: parseInt(wordcount), extra });
 }
 
 // ── 自由写稿 ─────────────────────────────────────────────
