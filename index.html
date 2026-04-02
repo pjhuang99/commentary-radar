@@ -865,26 +865,7 @@ async function analyzeWithClaude(items, apiKey) {
 话题列表：
 ${titles}`;
 
-  const res = await fetch('/api/claude', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      apiKey,
-      payload: {
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 3000,
-        messages: [{ role: 'user', content: prompt }]
-      }
-    })
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || 'API 请求失败 ' + res.status);
-  }
-
-  const data = await res.json();
-  const text = data.content?.[0]?.text || '';
+  const text = await callClaude(apiKey, prompt, 3000);
   const clean = text.replace(/```json|```/g, '').trim();
   return JSON.parse(clean);
 }
