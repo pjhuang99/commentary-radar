@@ -232,6 +232,12 @@
     color:var(--paper); background:var(--ink);
     padding:3px 8px; margin:10px 0 4px;
   }
+  .raw-platform-header {
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.6rem; font-weight:600; letter-spacing:1px;
+    color:var(--paper); background:var(--ink);
+    padding:3px 8px; margin:10px 0 4px;
+  }
   .raw-rank {
     font-family:'JetBrains Mono', monospace;
     font-size:0.62rem; color:var(--border); flex-shrink:0; width:18px;
@@ -705,33 +711,74 @@ function setStatus(msg, type='') {
 }
 
 // ── 热榜数据 ─────────────────────────────────────────────
-async function fetchHotList() {
+const SOURCES = [
+  { key: 'toutiao',   name: '今日头条', limit: 20 },
+  { key: 'thepaper',  name: '澎湃新闻', limit: 15 },
+  { key: 'sina-news', name: '新浪新闻', limit: 15 },
+  { key: 'netease-news', name: '网易新闻', limit: 15 },
+  { key: '36kr',      name: '36氪',     limit: 15 },
+  { key: 'huxiu',     name: '虎嗅',     limit: 15 },
+];
+
+async function fetchOne(source) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 12000);
-  const res = await fetch(
-    'https://daily-hot-api-vercel-mu.vercel.app/toutiao',
-    { signal: ctrl.signal }
-  ).finally(() => clearTimeout(timer));
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  const json = await res.json();
-  return (json.data || []).slice(0, 30);
+  try {
+    const res = await fetch(
+      'https://daily-hot-api-vercel-mu.vercel.app/' + source.key,
+      { signal: ctrl.signal }
+    ).finally(() => clearTimeout(timer));
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    return (json.data || []).slice(0, source.limit).map(function(item, i) {
+      return Object.assign({}, item, {
+        _source: source.key,
+        _sourceName: source.name,
+        id: source.key + '_' + (item.id || i),
+      });
+    });
+  } catch(e) {
+    console.warn('[' + source.name + ']', e.message);
+    return [];
+  }
+}
+
+async function fetchHotList() {
+  const results = await Promise.allSettled(SOURCES.map(fetchOne));
+  const all = [];
+  results.forEach(function(r) {
+    if (r.status === 'fulfilled') all.push.apply(all, r.value);
+  });
+  return all;
 }
 // ── 渲染原始热榜 ─────────────────────────────────────────
 function renderRawList(items, selectedIds) {
   const el = document.getElementById('rawList');
-  el.innerHTML = items.map((item, i) => {
-    const sel = selectedIds.has(item.id);
-    return `<div class="raw-item">
-      <span class="raw-rank ${i<3?'top':''}">${String(i+1).padStart(2,'0')}</span>
-      <span class="raw-title ${sel?'selected':''} ${!sel&&selectedIds.size>0?'raw-skip':''}">${item.title}</span>
-    </div>`;
-  }).join('');
+  // 按来源分组显示
+  const groups = {};
+  items.forEach(function(item) {
+    const sn = item._sourceName || '头条';
+    if (!groups[sn]) groups[sn] = [];
+    groups[sn].push(item);
+  });
+  let html = '';
+  Object.entries(groups).forEach(function([name, gItems]) {
+    html += '<div class="raw-platform-header">' + name + ' · ' + gItems.length + '条</div>';
+    gItems.forEach(function(item, i) {
+      const sel = selectedIds.has(item.id);
+      html += '<div class="raw-item">'
+        + '<span class="raw-rank ' + (i<3?'top':'') + '">' + String(i+1).padStart(2,'0') + '</span>'
+        + '<span class="raw-title ' + (sel?'selected':'') + ' ' + (!sel&&selectedIds.size>0?'raw-skip':'') + '">' + item.title + '</span>'
+        + '</div>';
+    });
+  });
+  el.innerHTML = html;
   document.getElementById('rawBadge').textContent = items.length + '条';
   document.getElementById('statTotal').textContent = items.length;
 }
 // ── Claude 分析 ───────────────────────────────────────────
 async function analyzeWithClaude(items, apiKey) {
-  const titles = items.map((item, i) => `${i+1}. ${item.title}`).join('\n');
+  const titles = items.map((item, i) => (i+1) + '. [' + (item._sourceName||'头条') + '] ' + item.title).join('\n');
 
   const prompt = `以下是今日头条热榜前30条话题，请你扮演一位资深评论编辑，用以下三个维度评估每个话题的可评论价值：
 
@@ -843,6 +890,7 @@ function renderResults(items, analysis) {
             </div>`).join('')}
         </div>
         <div class="card-tags">
+          <span class="tag">${items[s.index-1]?._sourceName || '头条'}</span>
           <span class="tag">${s.category || '时事'}</span>
           <span class="tag">热度 ${heatStr}</span>
         </div>
@@ -902,7 +950,7 @@ async function startAnalysis() {
     renderRawList(items, new Set());
 
     // Step 2: Claude 分析
-    setStatus(`已获取 ${items.length} 条热榜 · 正在分析评论价值…`, 'running');
+    setStatus('已获取 ' + items.length + ' 条热榜（6个来源）· 正在分析评论价值…', 'running');
     document.getElementById('resultList').innerHTML = `
       <div class="progress-wrap">
         <div class="progress-label">CLAUDE ANALYZING · ${items.length} TOPICS</div>
