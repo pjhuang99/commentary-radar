@@ -628,6 +628,17 @@
         placeholder="输入你想写的话题，如：某某事件、某个社会现象…">
     </div>
     <div>
+      <label class="field-label">文章类型</label>
+      <div style="display:flex;gap:12px;margin-top:4px;">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.8rem;">
+          <input type="radio" name="freeWriteStyle" value="pipeline" checked style="accent-color:var(--gold)"> 社会评论（六段式）
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.8rem;">
+          <input type="radio" name="freeWriteStyle" value="general" style="accent-color:var(--gold)"> 通用评论
+        </label>
+      </div>
+    </div>
+    <div>
       <label class="field-label">目标字数</label>
       <input class="write-num" id="freeWordcount" type="number" value="1500" min="500" max="5000" step="500" style="width:100%;display:block">
     </div>
@@ -661,6 +672,17 @@
     <div style="margin-bottom:12px;">
       <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);margin-bottom:6px;">写作角度</div>
       <div id="dialogAngles"></div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);margin-bottom:6px;">文章类型</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.8rem;">
+          <input type="radio" name="writeStyle" value="pipeline" checked style="accent-color:var(--gold)"> 社会评论（六段式）
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.8rem;">
+          <input type="radio" name="writeStyle" value="general" style="accent-color:var(--gold)"> 通用评论
+        </label>
+      </div>
     </div>
     <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;">
       <label style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);">目标字数</label>
@@ -1125,9 +1147,11 @@ function submitFromDialog() {
 
   var wordcount = parseInt(document.getElementById('dialogWordcount').value) || 1500;
   var extra = document.getElementById('dialogExtra').value.trim();
+  var styleEl = document.querySelector('input[name="writeStyle"]:checked');
+  var style = styleEl ? styleEl.value : 'pipeline';
 
   closeWriteDialog();
-  openDraftAndWrite({ title: data.title, angle: angle, wordcount: wordcount, extra: extra });
+  openDraftAndWrite({ title: data.title, angle: angle, wordcount: wordcount, extra: extra, style: style });
 }
 
 
@@ -1175,7 +1199,9 @@ function submitFreeWrite() {
   const extra = (document.getElementById('freeExtra')?.value || '').trim();
   if (!title) { alert('请填写选题/话题'); return; }
   if (!angle) { alert('请填写写作方向/观点'); return; }
-  openDraftAndWrite({ title, angle, wordcount: parseInt(wordcount), extra });
+  var freeStyleEl = document.querySelector('input[name="freeWriteStyle"]:checked');
+  var style = freeStyleEl ? freeStyleEl.value : 'pipeline';
+  openDraftAndWrite({ title, angle, wordcount: parseInt(wordcount), extra, style });
 }
 
 // ── 公共 Claude 调用 ─────────────────────────────────────
@@ -1204,7 +1230,7 @@ async function callClaude(apiKey, prompt, maxTokens) {
 }
 
 // ── 出稿核心 ─────────────────────────────────────────────
-async function openDraftAndWrite({ title, angle, wordcount, extra }) {
+async function openDraftAndWrite({ title, angle, wordcount, extra, style }) {
   const apiKey = document.getElementById('claudeKey').value.trim();
   if (!apiKey) { alert('请先填入 Claude API Key'); return; }
 
@@ -1213,13 +1239,60 @@ async function openDraftAndWrite({ title, angle, wordcount, extra }) {
   overlay.classList.add('open');
   document.getElementById('draftTitle').textContent = title;
   document.getElementById('draftMeta').innerHTML =
-    `<span>角度：${angle}</span><span>目标字数：${wordcount}字</span>`;
+    `<span>角度：${angle}</span><span>目标字数：${wordcount}字</span><span>${style==='pipeline'?'六段式Pipeline':'通用评论'}</span>`;
   document.getElementById('draftBody').innerHTML = '<div class="draft-loading">WRITING IN PROGRESS…</div>';
   document.getElementById('draftWordCount').textContent = '';
   document.getElementById('btnFactcheck').disabled = true;
   document.getElementById('factcheckReport').classList.remove('open');
 
-  const prompt = `请写一篇评论文章。
+  const isPipeline = style === 'pipeline';
+
+  const pipelinePrompt = `你是一位资深社会评论编辑，请按照以下六段式Pipeline结构，写一篇评论文章。
+
+【选题】${title}
+【核心观点/角度】${angle}
+【目标字数】约${wordcount}字
+${extra ? `【补充要求】${extra}` : ''}
+
+【总体语调】30%理性分析 + 40%情绪共鸣 + 30%价值输出
+【禁忌】严禁使用"总而言之"、"综上所述"、"我们应该"等学生作文词汇
+
+请严格按以下六段结构输出，每段开头用【第X段：标题】标注：
+
+【第一段：破题】场景重现与矛盾冲突
+- 用"特写镜头法"切入，描述一个具体画面或反差极大的结果
+- 不直接复述新闻，要有荒诞感或冲突点
+- 引出话题背后最具争议的核心矛盾
+
+【第二段：逻辑拆解】深挖冰山底座
+- 用"因果追溯法"，通过"看似……实则……"结构展示深度
+- 从法律、经济或社会心理角度找底层逻辑
+- 可引用专业概念（如"剧场效应"、"沉没成本"）或历史背景
+
+【第三段：利益关联】痛点扎针
+- 打破"事不关己"，用"代入感提问"将宏大叙事降维到普通人
+- 告诉读者这件事和他们的生活账本、职业前途有何关联
+- 引用社会普遍心理或真实处境
+
+【第四段：态度定调】价值观输出（金句段）
+- 给出鲜明观点，用"金句对比法"——对称或强反差短句
+- 锚定句：一句话点明核心观点，不留模糊空间
+- 可先说"有人说……"再推翻，展示思辨
+- 带情绪色彩：愤怒/讽刺/惋惜
+
+【第五段：拓展深度】延伸思考
+- 横向对比：引入类似事件或其他国家案例
+- 用1-2个关键数据强化观点
+- 溯源追问深层制度或历史原因
+
+【第六段：升华结尾】留白与共鸣
+- 金句收尾：凝练为一句可单独传播的判断句
+- 留一个让人回味的开放性问题，引发共鸣
+- 用"我们"视角拉近距离，不给标准答案
+
+直接输出正文，不要输出文章标题，段落标注【第X段：…】保留。`;
+
+  const generalPrompt = `请写一篇评论文章。
 
 【选题】${title}
 【写作角度/核心观点】${angle}
@@ -1227,11 +1300,13 @@ async function openDraftAndWrite({ title, angle, wordcount, extra }) {
 ${extra ? `【补充要求】${extra}` : ''}
 
 要求：
-- 直接输出文章正文，不要输出标题（标题已有）
+- 直接输出文章正文，不要输出标题
 - 开头要有抓人的切入，不要平铺直叙
 - 结构清晰，论点有支撑，语言有力度
 - 结尾要有升华或余味，不要虎头蛇尾
 - 控制在${wordcount}字左右`;
+
+  const prompt = isPipeline ? pipelinePrompt : generalPrompt;
 
   try {
     const text = await callClaude(apiKey, prompt, 4000);
