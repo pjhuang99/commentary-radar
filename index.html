@@ -533,8 +533,12 @@
 
 <div class="toolbar">
   <button class="btn-fetch" id="btnFetch" onclick="startAnalysis()">▶ 开始分析</button>
+  <div style="display:flex;gap:6px;flex-shrink:0;">
+    <button class="cat-btn active" id="providerClaude" onclick="switchProvider('claude')">Claude</button>
+    <button class="cat-btn" id="providerDeepseek" onclick="switchProvider('deepseek')">DeepSeek</button>
+  </div>
   <div class="key-input-wrap">
-    <label>CLAUDE KEY</label>
+    <label id="keyLabel">CLAUDE KEY</label>
     <input class="key-input" id="claudeKey" type="password"
       placeholder="sk-ant-api03-..." autocomplete="off"
       oninput="saveKey(this.value)">
@@ -600,11 +604,11 @@
     <div class="side-section">
       <div class="side-title">Key 申请</div>
       <div class="key-guide">
-        <strong>免费获取 Claude Key：</strong><br>
-        1. 打开 <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a><br>
-        2. 注册账号 → API Keys → Create Key<br>
-        3. 复制粘贴到上方输入框<br>
-        Key 仅存于本地，不会上传
+        <strong>Claude Key：</strong><br>
+        <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys<br><br>
+        <strong>DeepSeek Key（国内推荐）：</strong><br>
+        <a href="https://platform.deepseek.com" target="_blank">platform.deepseek.com</a> → API Keys<br><br>
+        Key 仅存于本地浏览器，不会上传
       </div>
     </div>
 
@@ -713,15 +717,39 @@ function updateClock() {
 setInterval(updateClock, 1000); updateClock();
 
 // ── Key 本地缓存 ──────────────────────────────────────────
-function saveKey(v) {
-  try { localStorage.setItem('claude_key', v); } catch(e){}
-}
 function loadKey() {
   try { return localStorage.getItem('claude_key') || ''; } catch(e){ return ''; }
 }
+function getProvider() {
+  try { return localStorage.getItem('ai_provider') || 'claude'; } catch(e){ return 'claude'; }
+}
+function switchProvider(p) {
+  try { localStorage.setItem('ai_provider', p); } catch(e){}
+  document.getElementById('providerClaude').classList.toggle('active', p === 'claude');
+  document.getElementById('providerDeepseek').classList.toggle('active', p === 'deepseek');
+  const label = document.getElementById('keyLabel');
+  const input = document.getElementById('claudeKey');
+  if (p === 'deepseek') {
+    label.textContent = 'DEEPSEEK KEY';
+    input.placeholder = 'sk-...';
+    const dk = (() => { try { return localStorage.getItem('deepseek_key') || ''; } catch(e){ return ''; } })();
+    input.value = dk;
+  } else {
+    label.textContent = 'CLAUDE KEY';
+    input.placeholder = 'sk-ant-api03-...';
+    input.value = loadKey();
+  }
+}
+function saveKey(v) {
+  const p = getProvider();
+  try {
+    if (p === 'deepseek') localStorage.setItem('deepseek_key', v);
+    else localStorage.setItem('claude_key', v);
+  } catch(e){}
+}
 window.addEventListener('DOMContentLoaded', () => {
-  const k = loadKey();
-  if (k) document.getElementById('claudeKey').value = k;
+  const p = getProvider();
+  switchProvider(p);
 });
 
 // ── 状态 ─────────────────────────────────────────────────
@@ -1171,13 +1199,16 @@ function submitFreeWrite() {
 
 // ── 公共 Claude 调用 ─────────────────────────────────────
 async function callClaude(apiKey, prompt, maxTokens) {
+  const provider = getProvider();
+  const model = provider === 'deepseek' ? 'deepseek-chat' : 'claude-sonnet-4-20250514';
   const res = await fetch('/api/claude', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       apiKey,
+      provider,
       payload: {
-        model: 'claude-sonnet-4-20250514',
+        model,
         max_tokens: maxTokens || 2000,
         messages: [{ role: 'user', content: prompt }]
       }
