@@ -328,6 +328,20 @@
   .key-guide a { color:var(--accent); }
   .key-guide strong { color:var(--ink); }
 
+  /* ── 分类筛选 ── */
+  .cat-filters {
+    display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;
+  }
+  .cat-btn {
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.62rem; font-weight:600; letter-spacing:0.5px;
+    padding:4px 12px; cursor:pointer;
+    border:1px solid var(--border); background:transparent;
+    color:var(--muted); transition: all 0.15s;
+  }
+  .cat-btn:hover { border-color:var(--ink); color:var(--ink); }
+  .cat-btn.active { background:var(--ink); color:var(--paper); border-color:var(--ink); }
+
   /* ── 写稿按钮 ── */
   .btn-write {
     font-family:'JetBrains Mono', monospace;
@@ -533,6 +547,13 @@
     <div class="section-header">
       <div class="section-title">适合写评论的话题</div>
       <div class="section-count" id="resultCount">--</div>
+    </div>
+    <div class="cat-filters">
+      <button class="cat-btn active" onclick="filterCat('全部', this)">全部</button>
+      <button class="cat-btn" onclick="filterCat('时政社会', this)">时政社会</button>
+      <button class="cat-btn" onclick="filterCat('财经', this)">财经</button>
+      <button class="cat-btn" onclick="filterCat('商业', this)">商业</button>
+      <button class="cat-btn" onclick="filterCat('科技', this)">科技</button>
     </div>
     <div id="resultList">
       <div class="empty-state">
@@ -860,7 +881,12 @@ function renderResults(items, analysis) {
   const maxHeat = Math.max(...selected.map(s => items[s.index-1]?.hot || 0));
   const selectedIds = new Set(selected.map(s => items[s.index-1]?.id));
 
-  el.innerHTML = `<div class="card-list">${selected.map((s, i) => {
+  // 重置筛选按钮
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  const allBtn = document.querySelector('.cat-btn');
+  if (allBtn) allBtn.classList.add('active');
+
+  const cardHtmlList = selected.map((s, i) => {
     const item = items[s.index - 1];
     if (!item) return '';
     const heatPct = maxHeat > 0 ? Math.round((item.hot / maxHeat) * 100) : 0;
@@ -903,7 +929,20 @@ function renderResults(items, analysis) {
         <button class="btn-write" id="write-btn-${i}">✍ 写这篇</button>
       </div>
     </div>`;
-  }).join('')}</div>`;
+  });
+
+  // 存储所有卡片供筛选用
+  window._allCards = selected.map((s, i) => {
+    const item = items[s.index - 1];
+    return {
+      idx: i,
+      html: cardHtmlList[i],
+      category: s.category || '',
+      title: item ? item.title : '',
+    };
+  }).filter(c => c.html);
+
+  el.innerHTML = '<div class="card-list">' + cardHtmlList.join('') + '</div>';
 
   // 存储话题数据供写稿用
   window._topicData = {};
@@ -973,6 +1012,49 @@ async function startAnalysis() {
   } finally {
     btn.disabled = false;
   }
+}
+
+// ── 分类筛选 ─────────────────────────────────────────────
+window._allCards = [];  // 存储所有渲染好的卡片 {html, category}
+
+function filterCat(cat, btn) {
+  // 切换按钮高亮
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  // 定义各筛选类匹配的关键词
+  const catMap = {
+    '财经': ['财经', '经济', '金融', '股市', 'A股', '港股', '基金', '债', '银行', '货币', '汇率', '利率', '通胀', '降息', '加息', '理财', '投资', '期货', '大宗', '楼市', '房地产'],
+    '商业': ['商业', '企业', '公司', '品牌', '创业', '融资', '上市', 'IPO', '并购', '电商', '零售', '消费', '营销', '广告', '商标', '竞争', '垄断', '裁员', '招聘', '薪资'],
+    '科技': ['科技', '技术', '互联网', 'AI', '人工智能', '芯片', '半导体', '手机', '软件', '算法', '数据', '隐私', '平台', '机器人', '自动驾驶', '新能源', '电动车', '量子', '卫星'],
+  };
+
+  const el = document.getElementById('resultList');
+  if (!window._allCards.length) return;
+
+  const filtered = cat === '全部'
+    ? window._allCards
+    : cat === '时政社会'
+    ? window._allCards.filter(c => {
+        const kws = [...(catMap['财经']||[]), ...(catMap['商业']||[]), ...(catMap['科技']||[])];
+        return !kws.some(kw => c.category.includes(kw) || c.title.includes(kw));
+      })
+    : window._allCards.filter(c => {
+        const kws = catMap[cat] || [];
+        return kws.some(kw => c.category.includes(kw) || c.title.includes(kw));
+      });
+
+  if (!filtered.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">○</div><div class="empty-msg">该分类暂无话题</div></div>';
+  } else {
+    el.innerHTML = '<div class="card-list">' + filtered.map(c => c.html).join('') + '</div>';
+    // 重新绑定写稿按钮
+    filtered.forEach(function(c) {
+      var btn = document.getElementById('write-btn-' + c.idx);
+      if (btn) btn.addEventListener('click', function() { openWriteDialog(c.idx); });
+    });
+  }
+  document.getElementById('resultCount').textContent = filtered.length + ' 个话题';
 }
 
 // ── 写稿面板交互 ─────────────────────────────────────────
