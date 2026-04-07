@@ -640,7 +640,7 @@
     </div>
     <div>
       <label class="field-label">目标字数</label>
-      <input class="write-num" id="freeWordcount" type="number" value="1500" min="500" max="5000" step="500" style="width:100%;display:block">
+      <input class="write-num" id="freeWordcount" type="number" value="1000" min="500" max="2000" step="500" style="width:100%;display:block">
     </div>
     <div class="free-write-full">
       <label class="field-label">写作方向 / 观点</label>
@@ -686,7 +686,7 @@
     </div>
     <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;">
       <label style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);">目标字数</label>
-      <input id="dialogWordcount" type="number" value="1500" min="500" max="5000" step="500"
+      <input id="dialogWordcount" type="number" value="1000" min="500" max="2000" step="500"
         style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;border:1px solid var(--border);background:var(--paper);padding:5px 8px;width:90px;outline:none;">
       <span style="font-size:0.8rem;color:var(--muted);">字</span>
     </div>
@@ -851,7 +851,7 @@ function renderRawList(items, selectedIds) {
 async function analyzeWithClaude(items, apiKey) {
   const titles = items.map((item, i) => (i+1) + '. [' + (item._sourceName||'头条') + '] ' + item.title).join('\n');
 
-  const prompt = `以下是今日头条热榜前30条话题，请你扮演一位资深评论编辑，用以下三个维度评估每个话题的可评论价值：
+  const prompt = `以下是今日热榜前30条话题，请你扮演一位资深评论编辑，用以下三个维度评估每个话题的可评论价值：
 
 【评分维度】
 - 维度一：反差感与争议度（权重40%）
@@ -1254,15 +1254,15 @@ async function openDraftAndWrite({ title, angle, wordcount, extra, style }) {
 【目标字数】约${wordcount}字
 ${extra ? `【补充要求】${extra}` : ''}
 
-【总体语调】30%理性分析 + 40%情绪共鸣 + 30%价值输出
-【禁忌】严禁使用"总而言之"、"综上所述"、"我们应该"等学生作文词汇
+【总体语调】40%理性分析 + 20%情绪共鸣 + 40%价值输出
+【禁忌】1. 砍掉所有正确的废话和铺垫，开门见山。2. 把所有空泛的四字成语，替换为接地气的大白话或精准的商业术语。
 
-请严格按以下六段结构输出，每段开头用【第X段：标题】标注：
+请按以下六段结构输出，每段开头用【第X段：标题】标注：
 
 【第一段：破题】场景重现与矛盾冲突
-- 用"特写镜头法"切入，描述一个具体画面或反差极大的结果
 - 不直接复述新闻，要有荒诞感或冲突点
 - 引出话题背后最具争议的核心矛盾
+- 用"特写镜头法"切入，描述一个具体画面或反差极大的结果
 
 【第二段：逻辑拆解】深挖冰山底座
 - 用"因果追溯法"，通过"看似……实则……"结构展示深度
