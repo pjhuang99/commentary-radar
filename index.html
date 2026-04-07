@@ -149,6 +149,8 @@
   }
   .card-rank.top { color:var(--accent); }
 
+  .card-body {}
+
   .card-title {
     font-size:1rem; font-weight:600; line-height:1.5;
     margin-bottom:6px; color:var(--ink);
@@ -430,12 +432,13 @@
       <div style="display:flex;gap:12px;margin-top:4px;">
         <label style="font-size:0.8rem;"><input type="radio" name="freeWriteStyle" value="pipeline" checked> 社会评论（六段式）</label>
         <label style="font-size:0.8rem;"><input type="radio" name="freeWriteStyle" value="general"> 通用评论</label>
+        <label style="font-size:0.8rem;"><input type="radio" name="freeWriteStyle" value="oped"> 深度 Op-Ed</label>
       </div>
     </div>
     <div>
       <label class="field-label">写作立场（视角模拟）</label>
       <select class="write-num" id="freePersona" style="width:100%; height:36px;">
-        <option value="editor">资深编辑（默认）</option>
+        <option value="editor">主流情绪（默认）</option>
         <option value="conservative">保守派（稳健/传统）</option>
         <option value="radical">激进派（变革/批判）</option>
         <option value="scholar">中立学者（理性/多维）</option>
@@ -476,7 +479,7 @@
     <div style="margin-bottom:12px;">
       <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);margin-bottom:6px;">写作立场（视角模拟）</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <label style="font-size:0.8rem;"><input type="radio" name="writePersona" value="editor" checked> 资深编辑</label>
+        <label style="font-size:0.8rem;"><input type="radio" name="writePersona" value="editor" checked> 主流情绪</label>
         <label style="font-size:0.8rem;"><input type="radio" name="writePersona" value="conservative"> 保守派</label>
         <label style="font-size:0.8rem;"><input type="radio" name="writePersona" value="radical"> 激进派</label>
         <label style="font-size:0.8rem;"><input type="radio" name="writePersona" value="scholar"> 中立学者</label>
@@ -484,9 +487,10 @@
     </div>
     <div style="margin-bottom:12px;">
       <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);margin-bottom:6px;">文章类型</div>
-      <div style="display:flex;gap:8px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <label style="font-size:0.8rem;"><input type="radio" name="writeStyle" value="pipeline" checked> 社会评论（六段式）</label>
         <label style="font-size:0.8rem;"><input type="radio" name="writeStyle" value="general"> 通用评论</label>
+        <label style="font-size:0.8rem;"><input type="radio" name="writeStyle" value="oped"> 深度 Op-Ed</label>
       </div>
     </div>
     <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;">
@@ -704,7 +708,7 @@ async function openDraftAndWrite({ title, angle, persona, style, wordcount, extr
   document.getElementById('draftBody').innerHTML = '<div class="draft-loading">Phase 1: 正在检索深度背景与行业资料...</div>';
   
   const personas = {
-    editor: "资深编辑：文风客观、犀利，擅长平衡观点。",
+    editor: "主流情绪：文风客观、犀利，基于大众认知最大公约数进行分析。",
     conservative: "保守派：强调稳定、传统价值和法理秩序，审视激进变革。",
     radical: "激进派：强调公平、结构性改革，批判既得利益。",
     scholar: "中立学者：理性、冷静，侧重社会学模型和历史对比。"
@@ -714,11 +718,35 @@ async function openDraftAndWrite({ title, angle, persona, style, wordcount, extr
     const research = await getResearchContext(key, title, angle);
     document.getElementById('draftBody').innerHTML = '<div class="draft-loading">Phase 2: 资料已就绪，正在生成深度稿件...</div>';
     
-    const prompt = `你是【${personas[persona]}】。结合以下深度资料写一篇评论。
+    const isOpEd = style === 'oped';
+    const isPipeline = style === 'pipeline';
+
+    const opedPrompt = `你是一位为《纽约时报》或《华尔街日报》撰稿的顶级特约评论员。请基于以下深度资料，撰写一篇具有【议程设置】能力的 Op-Ed。
+【选题】${title}
+【核心立场】${angle}
+【深度资料】${research}
+【目标字数】约${wordcount}字
+
+【创作核心指令】
+1. **反共识洞察**：不要复述新闻。请从【深度资料】中挖掘一个被大众忽略的、甚至与“主流情绪”相悖的深层因果关系。
+2. **知识降维**：使用专业领域的硬核逻辑（如博弈论、演化心理学、定量金融模型）来解释社会现象，体现智识上的压制力。
+3. **消除套路**：严禁出现“随着...的快速发展”、“我们要...”等说教式句子。
+4. **文风要求**：冷峻、权威、充满个人风格。使用“第一人称”或强有力的叙述，结构要像流体一样随论点自然展开，而非生硬分段。
+
+请直接输出正文，追求“一剑封喉”的穿透力。`;
+
+    const pipelinePrompt = `你是【${personas[persona]}】。结合以下深度资料写一篇评论。
     资料：${research}
     选题：${title} | 角度：${angle} | 目标：${wordcount}字。
     要求：1. 严禁废话、套话和低质成语。 2. 凡是“很多”“很好”等词必须用精准术语替换。 3. 总体语调：硬核逻辑驱动。
     结构：按六段式（破题、拆解、关联、定调、拓展、升华）输出。`;
+
+    const generalPrompt = `你是一位专业评论员。请基于以下资料写一篇评论。
+    资料：${research}
+    选题：${title} | 角度：${angle} | 目标：${wordcount}字。
+    要求：砍掉铺垫，直接进场。使用具体的行业术语或事实细节，逻辑有力。`;
+
+    const prompt = isOpEd ? opedPrompt : (isPipeline ? pipelinePrompt : generalPrompt);
 
     const text = await callClaude(key, prompt, 4000);
     document.getElementById('draftBody').textContent = text;
