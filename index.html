@@ -232,12 +232,6 @@
     color:var(--paper); background:var(--ink);
     padding:3px 8px; margin:10px 0 4px;
   }
-  .raw-platform-header {
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.6rem; font-weight:600; letter-spacing:1px;
-    color:var(--paper); background:var(--ink);
-    padding:3px 8px; margin:10px 0 4px;
-  }
   .raw-rank {
     font-family:'JetBrains Mono', monospace;
     font-size:0.62rem; color:var(--border); flex-shrink:0; width:18px;
@@ -351,61 +345,6 @@
     cursor:pointer; margin-top:10px; transition: all 0.15s;
   }
   .btn-write:hover { background:var(--gold); color:var(--paper); }
-
-  /* ── 写稿面板（滑入卡片下方） ── */
-  .write-panel {
-    margin-top:12px; padding:16px;
-    background:var(--cream); border:1px solid var(--border);
-    display:none; flex-direction:column; gap:12px;
-  }
-  .write-panel.open { display:flex; }
-  .write-panel-title {
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.65rem; font-weight:600; letter-spacing:1.5px;
-    text-transform:uppercase; color:var(--muted);
-    border-bottom:1px solid var(--border); padding-bottom:6px;
-    display:flex; justify-content:space-between;
-  }
-  .write-panel-title button {
-    background:none; border:none; cursor:pointer;
-    color:var(--muted); font-size:0.75rem; padding:0;
-  }
-  .angle-select { display:flex; flex-direction:column; gap:6px; }
-  .angle-option {
-    display:flex; align-items:flex-start; gap:8px;
-    cursor:pointer; padding:6px 8px;
-    border:1px solid transparent; transition: all 0.12s;
-  }
-  .angle-option:hover { border-color:var(--gold); background:rgba(184,134,11,0.05); }
-  .angle-option.selected { border-color:var(--gold); background:rgba(184,134,11,0.08); }
-  .angle-option input[type=radio] { margin-top:3px; accent-color:var(--gold); flex-shrink:0; }
-  .angle-option-text { font-size:0.8rem; line-height:1.5; }
-  .write-row { display:flex; gap:10px; align-items:center; }
-  .write-row label {
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.62rem; color:var(--muted); white-space:nowrap;
-  }
-  .write-input {
-    font-family:'Noto Serif SC', serif; font-size:0.8rem;
-    border:1px solid var(--border); background:var(--paper);
-    padding:6px 10px; color:var(--ink); flex:1; outline:none;
-    resize:vertical; min-height:36px;
-  }
-  .write-input:focus { border-color:var(--gold); }
-  .write-num {
-    font-family:'JetBrains Mono', monospace; font-size:0.8rem;
-    border:1px solid var(--border); background:var(--paper);
-    padding:6px 10px; color:var(--ink); width:90px; outline:none;
-  }
-  .btn-submit-write {
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.72rem; font-weight:600; letter-spacing:0.5px;
-    background:var(--ink); color:var(--paper);
-    border:none; padding:8px 20px; cursor:pointer;
-    transition: background 0.15s; align-self:flex-start;
-  }
-  .btn-submit-write:hover { background:var(--accent); }
-  .btn-submit-write:disabled { background:var(--border); cursor:not-allowed; }
 
   /* ── 自由写稿区 ── */
   .free-write-section {
@@ -615,7 +554,6 @@
   </div>
 </div>
 
-<!-- 自由写稿区 -->
 <div class="free-write-section">
   <div class="section-header">
     <div class="section-title">自由写稿</div>
@@ -639,6 +577,15 @@
       </div>
     </div>
     <div>
+      <label class="field-label">写作立场</label>
+      <select class="write-num" id="freePersona" style="width:100%; height:36px; border:1px solid var(--border); background:var(--paper); font-size:0.8rem;">
+        <option value="editor">资深编辑（默认）</option>
+        <option value="conservative">保守派（稳健/传统）</option>
+        <option value="radical">激进派（变革/批判）</option>
+        <option value="scholar">中立学者（理性/多维）</option>
+      </select>
+    </div>
+    <div>
       <label class="field-label">目标字数</label>
       <input class="write-num" id="freeWordcount" type="number" value="1500" min="500" max="5000" step="500" style="width:100%;display:block">
     </div>
@@ -658,7 +605,6 @@
   </div>
 </div>
 
-<!-- 写稿设置弹窗 -->
 <div id="writeDialog" style="display:none;position:fixed;inset:0;background:rgba(26,18,8,0.7);z-index:200;align-items:center;justify-content:center;">
   <div style="background:var(--paper);width:100%;max-width:520px;border:2px solid var(--ink);padding:24px;position:relative;">
     <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);">
@@ -672,6 +618,23 @@
     <div style="margin-bottom:12px;">
       <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);margin-bottom:6px;">写作角度</div>
       <div id="dialogAngles"></div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);margin-bottom:6px;">写作立场（视角模拟）</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.8rem;">
+          <input type="radio" name="writePersona" value="editor" checked style="accent-color:var(--gold)"> 资深编辑（默认）
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.8rem;">
+          <input type="radio" name="writePersona" value="conservative" style="accent-color:var(--gold)"> 保守派
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.8rem;">
+          <input type="radio" name="writePersona" value="radical" style="accent-color:var(--gold)"> 激进派
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:0.8rem;">
+          <input type="radio" name="writePersona" value="scholar" style="accent-color:var(--gold)"> 中立学者
+        </label>
+      </div>
     </div>
     <div style="margin-bottom:12px;">
       <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);margin-bottom:6px;">文章类型</div>
@@ -703,7 +666,6 @@
   </div>
 </div>
 
-<!-- 出稿遮罩 -->
 <div class="draft-overlay" id="draftOverlay" onclick="closeDraftOnBg(event)">
   <div class="draft-box">
     <div class="draft-header">
@@ -825,7 +787,6 @@ async function fetchHotList() {
 // ── 渲染原始热榜 ─────────────────────────────────────────
 function renderRawList(items, selectedIds) {
   const el = document.getElementById('rawList');
-  // 按来源分组显示
   const groups = {};
   items.forEach(function(item) {
     const sn = item._sourceName || '头条';
@@ -906,13 +867,11 @@ function renderResults(items, analysis) {
     return;
   }
 
-  // 按评分排序
   selected.sort((a, b) => b.rating - a.rating);
 
   const maxHeat = Math.max(...selected.map(s => items[s.index-1]?.hot || 0));
   const selectedIds = new Set(selected.map(s => items[s.index-1]?.id));
 
-  // 重置筛选按钮
   document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
   const allBtn = document.querySelector('.cat-btn');
   if (allBtn) allBtn.classList.add('active');
@@ -924,7 +883,6 @@ function renderResults(items, analysis) {
     const heatStr = item.hot > 1e7 ? (item.hot/1e4).toFixed(0)+'万'
                   : item.hot > 1e4 ? (item.hot/1e4).toFixed(1)+'万'
                   : item.hot+'';
-    // rating是6-10的综合得分，映射到3-5星
     const stars_count = s.rating >= 9 ? 5 : s.rating >= 8 ? 4 : 3;
     const stars = '★'.repeat(stars_count) + '☆'.repeat(5 - stars_count);
     const ratingText = s.rating >= 9 ? '强烈推荐' : s.rating >= 8 ? '值得一写' : '可以考虑';
@@ -962,7 +920,6 @@ function renderResults(items, analysis) {
     </div>`;
   });
 
-  // 存储所有卡片供筛选用
   window._allCards = selected.map((s, i) => {
     const item = items[s.index - 1];
     return {
@@ -975,13 +932,12 @@ function renderResults(items, analysis) {
 
   el.innerHTML = '<div class="card-list">' + cardHtmlList.join('') + '</div>';
 
-  // 存储话题数据供写稿用
   window._topicData = {};
   selected.forEach((s, i) => {
     const item = items[s.index - 1];
     if (item) window._topicData[i] = { title: item.title, angles: s.angles || [] };
   });
-  // 用 addEventListener 绑定写稿按钮（避免 onclick 属性的引号问题）
+
   setTimeout(function() {
     selected.forEach(function(s, i) {
       var btn = document.getElementById('write-btn-' + i);
@@ -991,7 +947,6 @@ function renderResults(items, analysis) {
   document.getElementById('statSelected').textContent = selected.length;
   document.getElementById('resultCount').textContent = `${selected.length} 个话题`;
 
-  // 更新侧栏高亮
   renderRawList(items, selectedIds);
 }
 
@@ -1008,7 +963,6 @@ async function startAnalysis() {
   btn.disabled = true;
 
   try {
-    // Step 1: 拉头条热榜
     setStatus('正在获取头条热榜…', 'running');
     document.getElementById('resultList').innerHTML = `
       <div class="progress-wrap">
@@ -1019,7 +973,6 @@ async function startAnalysis() {
     const items = await fetchHotList();
     renderRawList(items, new Set());
 
-    // Step 2: Claude 分析
     setStatus('已获取 ' + items.length + ' 条热榜（6个来源）· 正在分析评论价值…', 'running');
     document.getElementById('resultList').innerHTML = `
       <div class="progress-wrap">
@@ -1028,7 +981,6 @@ async function startAnalysis() {
       </div>`;
     const analysis = await analyzeWithClaude(items, apiKey);
 
-    // Step 3: 渲染
     renderResults(items, analysis);
     setStatus(`分析完成 · ${analysis.selected?.length || 0} 个话题值得写`, 'done');
 
@@ -1046,14 +998,12 @@ async function startAnalysis() {
 }
 
 // ── 分类筛选 ─────────────────────────────────────────────
-window._allCards = [];  // 存储所有渲染好的卡片 {html, category}
+window._allCards = [];
 
 function filterCat(cat, btn) {
-  // 切换按钮高亮
   document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
 
-  // 定义各筛选类匹配的关键词
   const catMap = {
     '财经': ['财经', '经济', '金融', '股市', 'A股', '港股', '基金', '债', '银行', '货币', '汇率', '利率', '通胀', '降息', '加息', '理财', '投资', '期货', '大宗', '楼市', '房地产'],
     '商业': ['商业', '企业', '公司', '品牌', '创业', '融资', '上市', 'IPO', '并购', '电商', '零售', '消费', '营销', '广告', '商标', '竞争', '垄断', '裁员', '招聘', '薪资'],
@@ -1079,7 +1029,6 @@ function filterCat(cat, btn) {
     el.innerHTML = '<div class="empty-state"><div class="empty-icon">○</div><div class="empty-msg">该分类暂无话题</div></div>';
   } else {
     el.innerHTML = '<div class="card-list">' + filtered.map(c => c.html).join('') + '</div>';
-    // 重新绑定写稿按钮
     filtered.forEach(function(c) {
       var btn = document.getElementById('write-btn-' + c.idx);
       if (btn) btn.addEventListener('click', function() { openWriteDialog(c.idx); });
@@ -1096,7 +1045,6 @@ function openWriteDialog(idx) {
 
   document.getElementById('dialogTitle').textContent = data.title;
 
-  // 渲染角度选项
   var anglesHtml = '';
   (data.angles || []).forEach(function(a, j) {
     anglesHtml += '<label style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;cursor:pointer;">'
@@ -1110,7 +1058,6 @@ function openWriteDialog(idx) {
     + ' style="display:none;width:100%;font-size:0.82rem;border:1px solid var(--border);padding:5px 8px;margin-top:2px;outline:none;">';
   document.getElementById('dialogAngles').innerHTML = anglesHtml;
 
-  // 监听自定义角度
   document.querySelectorAll('input[name="dialogAngle"]').forEach(function(r) {
     r.addEventListener('change', function() {
       var ci = document.getElementById('customAngleInput');
@@ -1149,65 +1096,33 @@ function submitFromDialog() {
   var extra = document.getElementById('dialogExtra').value.trim();
   var styleEl = document.querySelector('input[name="writeStyle"]:checked');
   var style = styleEl ? styleEl.value : 'pipeline';
+  
+  // 获取立场
+  var personaEl = document.querySelector('input[name="writePersona"]:checked');
+  var persona = personaEl ? personaEl.value : 'editor';
 
   closeWriteDialog();
-  openDraftAndWrite({ title: data.title, angle: angle, wordcount: wordcount, extra: extra, style: style });
+  openDraftAndWrite({ title: data.title, angle: angle, wordcount: wordcount, extra: extra, style: style, persona: persona });
 }
 
-
-
-function selectAngle(radio) {
-  // 高亮选中
-  const name = radio.name;
-  document.querySelectorAll(`input[name="${name}"]`).forEach(r => {
-    r.closest('.angle-option').classList.toggle('selected', r.checked);
-  });
-  // 显示自定义输入框
-  const idx = name.replace('angle-', '');
-  const customRow = document.getElementById(`custom-row-${idx}`);
-  if (customRow) customRow.style.display = radio.value === 'custom' ? 'flex' : 'none';
-}
-
-// ── 从卡片写稿 ────────────────────────────────────────────
-function submitWriteFromPanel(idx) {
-  const data = window._topicData?.[idx];
-  if (!data) { alert('话题数据丢失，请重新分析'); return; }
-
-  const radios = document.querySelectorAll(`input[name="angle-${idx}"]`);
-  let angle = '';
-  radios.forEach(r => {
-    if (r.checked) {
-      if (r.value === 'custom') {
-        angle = document.getElementById(`custom-angle-${idx}`)?.value?.trim() || '';
-      } else {
-        angle = data.angles[parseInt(r.value)] || '';
-      }
-    }
-  });
-  const wordcount = document.getElementById(`wordcount-${idx}`)?.value || 1500;
-  const extra = document.getElementById(`extra-${idx}`)?.value?.trim() || '';
-
-  if (!angle) { alert('请选择或填写写作角度'); return; }
-  openDraftAndWrite({ title: data.title, angle, wordcount: parseInt(wordcount), extra });
-}
-
-// ── 自由写稿 ─────────────────────────────────────────────
 function submitFreeWrite() {
   const title = document.getElementById('freeTitle').value.trim();
   const angle = document.getElementById('freeAngle').value.trim();
   const wordcount = document.getElementById('freeWordcount').value || 1500;
   const extra = (document.getElementById('freeExtra')?.value || '').trim();
+  const persona = document.getElementById('freePersona').value;
+
   if (!title) { alert('请填写选题/话题'); return; }
   if (!angle) { alert('请填写写作方向/观点'); return; }
   var freeStyleEl = document.querySelector('input[name="freeWriteStyle"]:checked');
   var style = freeStyleEl ? freeStyleEl.value : 'pipeline';
-  openDraftAndWrite({ title, angle, wordcount: parseInt(wordcount), extra, style });
+  openDraftAndWrite({ title, angle, wordcount: parseInt(wordcount), extra, style, persona });
 }
 
 // ── 公共 Claude 调用 ─────────────────────────────────────
 async function callClaude(apiKey, prompt, maxTokens) {
   const provider = getProvider();
-  const model = provider === 'deepseek' ? 'deepseek-chat' : 'claude-sonnet-4-20250514';
+  const model = provider === 'deepseek' ? 'deepseek-chat' : 'claude-3-5-sonnet-20240620';
   const res = await fetch('/api/claude', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1230,11 +1145,10 @@ async function callClaude(apiKey, prompt, maxTokens) {
 }
 
 // ── 出稿核心 ─────────────────────────────────────────────
-async function openDraftAndWrite({ title, angle, wordcount, extra, style }) {
+async function openDraftAndWrite({ title, angle, wordcount, extra, style, persona }) {
   const apiKey = document.getElementById('claudeKey').value.trim();
   if (!apiKey) { alert('请先填入 Claude API Key'); return; }
 
-  // 打开遮罩
   const overlay = document.getElementById('draftOverlay');
   overlay.classList.add('open');
   document.getElementById('draftTitle').textContent = title;
@@ -1245,9 +1159,18 @@ async function openDraftAndWrite({ title, angle, wordcount, extra, style }) {
   document.getElementById('btnFactcheck').disabled = true;
   document.getElementById('factcheckReport').classList.remove('open');
 
+  // 人格指令注入
+  const personaMap = {
+    editor: "你是一位资深社会评论编辑，文风客观、犀利、有深度，擅长平衡各种观点。",
+    conservative: "你是一位立场稳健的保守派评论员。你强调社会稳定、传统价值和秩序的重要性。你对激进变革持审慎态度，倾向于从维护现存体系、渐进式改良和法理传承的角度分析问题。",
+    radical: "你是一位言辞犀利的激进派/先锋派评论员。你强调社会公平、打破既得利益结构和结构性改革。你擅长挖掘权力不对等、系统性压迫等深层问题，文风充满批判性和对变革的渴望。",
+    scholar: "你是一位极其冷静、客观的中立学者。你摒弃情绪化的站队，侧重于多维度的数据分析、社会学模型和历史背景对比。你通过‘看似……实则……’的结构探讨系统成因，不轻易下结论，旨在启发思考。"
+  };
+  const personaInstruction = personaMap[persona] || personaMap.editor;
+
   const isPipeline = style === 'pipeline';
 
-  const pipelinePrompt = `你是一位资深社会评论编辑，请按照以下六段式Pipeline结构，写一篇评论文章。
+  const pipelinePrompt = `${personaInstruction} 请按照以下六段式Pipeline结构，写一篇评论文章。
 
 【选题】${title}
 【核心观点/角度】${angle}
@@ -1292,7 +1215,7 @@ ${extra ? `【补充要求】${extra}` : ''}
 
 直接输出正文，不要输出文章标题，段落标注【第X段：…】保留。`;
 
-  const generalPrompt = `请写一篇评论文章。
+  const generalPrompt = `${personaInstruction} 请写一篇评论文章。
 
 【选题】${title}
 【写作角度/核心观点】${angle}
@@ -1303,7 +1226,7 @@ ${extra ? `【补充要求】${extra}` : ''}
 - 直接输出文章正文，不要输出标题
 - 开头要有抓人的切入，不要平铺直叙
 - 结构清晰，论点有支撑，语言有力度
-- 结尾要有升华或余味，不要虎头蛇尾
+- 结尾要有升华或余味，不要虎头尾
 - 控制在${wordcount}字左右`;
 
   const prompt = isPipeline ? pipelinePrompt : generalPrompt;
@@ -1339,7 +1262,7 @@ function copyDraft() {
   });
 }
 
-// ── 事实核查（纯文本格式，无 JSON 解析风险）─────────────
+// ── 事实核查 ─────────────
 async function startFactcheck() {
   const apiKey = document.getElementById('claudeKey').value.trim();
   const draftText = document.getElementById('draftBody').textContent;
@@ -1352,7 +1275,6 @@ async function startFactcheck() {
   report.classList.add('open');
   items.innerHTML = '<div style="font-family:monospace;font-size:0.7rem;color:var(--gold)">正在核查所有事实陈述，请稍候…</div>';
 
-  // 第一步：纯文本格式核查报告
   const checkPrompt = `请对以下评论文章进行事实核查。
 
 用固定格式输出，每个问题占一行，用前缀区分：
@@ -1383,7 +1305,6 @@ ${draftText}`;
       }
     }
 
-    // 渲染报告
     let html = '';
     if (issues.length) {
       html += issues.map(it => `
@@ -1401,7 +1322,6 @@ ${draftText}`;
     }
     items.innerHTML = html;
 
-    // 第二步：有错误才修订正文
     if (issues.length) {
       items.innerHTML += '<div style="font-family:monospace;font-size:0.7rem;color:var(--gold);margin-top:10px">正在修订正文…</div>';
 
