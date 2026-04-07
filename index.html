@@ -1119,7 +1119,7 @@ function openWriteDialog(idx) {
   });
 
   document.getElementById('dialogExtra').value = '';
-  document.getElementById('dialogWordcount').value = 1500;
+  document.getElementById('dialogWordcount').value = 1000;
   var dlg = document.getElementById('writeDialog');
   dlg.style.display = 'flex';
 }
@@ -1145,7 +1145,7 @@ function submitFromDialog() {
   });
   if (!angle) { alert('请选择或填写写作角度'); return; }
 
-  var wordcount = parseInt(document.getElementById('dialogWordcount').value) || 1500;
+  var wordcount = parseInt(document.getElementById('dialogWordcount').value) || 1000;
   var extra = document.getElementById('dialogExtra').value.trim();
   var styleEl = document.querySelector('input[name="writeStyle"]:checked');
   var style = styleEl ? styleEl.value : 'pipeline';
@@ -1184,7 +1184,7 @@ function submitWriteFromPanel(idx) {
       }
     }
   });
-  const wordcount = document.getElementById(`wordcount-${idx}`)?.value || 1500;
+  const wordcount = document.getElementById(`wordcount-${idx}`)?.value || 1000;
   const extra = document.getElementById(`extra-${idx}`)?.value?.trim() || '';
 
   if (!angle) { alert('请选择或填写写作角度'); return; }
@@ -1195,7 +1195,7 @@ function submitWriteFromPanel(idx) {
 function submitFreeWrite() {
   const title = document.getElementById('freeTitle').value.trim();
   const angle = document.getElementById('freeAngle').value.trim();
-  const wordcount = document.getElementById('freeWordcount').value || 1500;
+  const wordcount = document.getElementById('freeWordcount').value || 1000;
   const extra = (document.getElementById('freeExtra')?.value || '').trim();
   if (!title) { alert('请填写选题/话题'); return; }
   if (!angle) { alert('请填写写作方向/观点'); return; }
@@ -1239,7 +1239,7 @@ async function openDraftAndWrite({ title, angle, wordcount, extra, style }) {
   overlay.classList.add('open');
   document.getElementById('draftTitle').textContent = title;
   document.getElementById('draftMeta').innerHTML =
-    `<span>角度：${angle}</span><span>目标字数：${wordcount}字</span><span>${style==='pipeline'?'六段式Pipeline':'通用评论'}</span>`;
+    `<span>角度：${angle}</span><span>目标字数：${wordcount}字</span><span>${style==='pipeline'?'社会新闻':'通用评论'}</span>`;
   document.getElementById('draftBody').innerHTML = '<div class="draft-loading">WRITING IN PROGRESS…</div>';
   document.getElementById('draftWordCount').textContent = '';
   document.getElementById('btnFactcheck').disabled = true;
@@ -1247,7 +1247,7 @@ async function openDraftAndWrite({ title, angle, wordcount, extra, style }) {
 
   const isPipeline = style === 'pipeline';
 
-  const pipelinePrompt = `你是一位资深社会评论编辑，请按照以下六段式Pipeline结构，写一篇评论文章。
+  const pipelinePrompt = `你是一位资深社会评论编辑，请按照以下社会新闻的结构，写一篇评论文章。
 
 【选题】${title}
 【核心观点/角度】${angle}
@@ -1301,6 +1301,7 @@ ${extra ? `【补充要求】${extra}` : ''}
 
 要求：
 - 直接输出文章正文，不要输出标题
+- 围绕选题所定位的新闻，尽量基于新闻的事实、数据或观点进行延伸分析
 - 开头要有抓人的切入，不要平铺直叙
 - 结构清晰，论点有支撑，语言有力度
 - 结尾要有升华或余味，不要虎头蛇尾
