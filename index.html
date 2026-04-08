@@ -310,11 +310,12 @@
   .factcheck-report { padding:12px 20px; border-top:1px solid var(--border); background:var(--cream); font-size:0.78rem; line-height:1.8; display:none; max-height:220px; overflow-y:auto; flex-shrink:0; }
   .factcheck-report.open { display:block; }
   .factcheck-report-title { font-family:'JetBrains Mono', monospace; font-size:0.6rem; font-weight:600; letter-spacing:1px; color:var(--muted); margin-bottom:8px; text-transform:uppercase; }
-  .fact-item { margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid rgba(180,160,120,0.2); }
-  .fact-original { color:var(--accent); text-decoration:line-through; font-size:0.78rem; }
-  .fact-corrected { color:var(--green); font-weight:600; font-size:0.78rem; }
-  .fact-note { color:var(--muted); font-size:0.72rem; }
-  .fact-ok { color:var(--green); font-size:0.78rem; }
+  .fact-item { margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid rgba(180,160,120,0.2); }
+  .fact-item:last-child { border-bottom:none; margin-bottom:0; }
+  .fact-original { color:var(--accent); text-decoration:line-through; font-size:0.78rem; margin-bottom:4px; }
+  .fact-corrected { color:var(--green); font-weight:600; font-size:0.78rem; margin-bottom:4px; }
+  .fact-note { color:var(--muted); font-size:0.72rem; font-style: italic; }
+  .fact-ok { color:var(--green); font-size:0.78rem; margin-bottom:6px; display:block; }
   .btn-close-draft:hover { background:var(--accent); border-color:var(--accent); color:var(--paper); }
   .draft-meta { padding:10px 20px; background:var(--cream); border-bottom:1px solid var(--border); font-family:'JetBrains Mono', monospace; font-size:0.62rem; color:var(--muted); display:flex; gap:20px; flex-shrink:0; }
   .draft-body { padding:24px 28px; overflow-y:auto; flex:1; font-size:0.95rem; line-height:2; white-space:pre-wrap; font-family:'Noto Serif SC', serif; }
@@ -573,16 +574,30 @@ async function fetchHotList() {
   return all;
 }
 
+// 2. 右栏的新闻按来源分成多组显示
 function renderRawList(items, selectedIds) {
   const el = document.getElementById('rawList');
-  let html = '';
-  items.forEach((item, i) => {
-    const sel = selectedIds.has(item.id);
-    html += `<div class="raw-item">
-      <span class="raw-rank ${i<3?'top':''}">${i+1}</span>
-      <a href="${item.url}" target="_blank" class="raw-title ${sel?'selected':''}">${item.title}</a>
-    </div>`;
+  // 按来源分组
+  const groups = {};
+  items.forEach(function(item) {
+    const sn = item._sourceName || '其他';
+    if (!groups[sn]) groups[sn] = [];
+    groups[sn].push(item);
   });
+
+  let html = '';
+  Object.entries(groups).forEach(function([name, gItems]) {
+    // 渲染分组标题
+    html += '<div class="raw-platform-header">' + name + ' · ' + gItems.length + '条</div>';
+    gItems.forEach(function(item, i) {
+      const sel = selectedIds.has(item.id);
+      html += `<div class="raw-item">
+        <span class="raw-rank ${i<3?'top':''}">${i+1}</span>
+        <a href="${item.url}" target="_blank" class="raw-title ${sel?'selected':''}">${item.title}</a>
+      </div>`;
+    });
+  });
+  
   el.innerHTML = html;
   document.getElementById('statTotal').textContent = items.length;
 }
@@ -600,18 +615,19 @@ async function callClaude(apiKey, prompt, maxTokens) {
   return data.content?.[0]?.text || '';
 }
 
+// 1. 修改筛选数量为 20 个
 async function analyzeWithClaude(items, apiKey) {
   const titles = items.map((it, i) => `${i+1}. [${it._sourceName}] ${it.title}`).join('\n');
-  const prompt = `扮演资深主笔，评估以下话题评论价值，筛选得分>=7的。
+  const prompt = `扮演资深主笔，评估以下话题评论价值。
   【重要准则】：
-  1. 减少选取纯国际政治（冲突、大选等），除非有重大国内影响。
+  1. 减少选取纯国际政治，除非有重大国内影响。
   2. 优先选取：社会民生、具有深度逻辑的财经与商业变动。
-  3. 目标：筛选出具有分析空间和智识挑战的话题。
+  3. 目标：筛选出 20 个具有分析空间和智识挑战的话题。
   
   返回JSON格式: {"selected": [{"index": 1, "rating": 5, "category": "社会", "angles": ["角度1", "角度2"]}]}
   列表:
   ${titles}`;
-  const text = await callClaude(apiKey, prompt, 3500);
+  const text = await callClaude(apiKey, prompt, 4000);
   return JSON.parse(text.replace(/```json|```/g, '').trim());
 }
 
@@ -759,19 +775,49 @@ function closeDraft() { document.getElementById('draftOverlay').classList.remove
 function closeDraftOnBg(e) { if (e.target === document.getElementById('draftOverlay')) closeDraft(); }
 function copyDraft() { navigator.clipboard.writeText(document.getElementById('draftBody').textContent); }
 
+// 3. 事实核查分段清晰显示
 async function startFactcheck() {
   const key = document.getElementById('claudeKey').value.trim();
   const text = document.getElementById('draftBody').textContent;
   const btn = document.getElementById('btnFactcheck');
+  const itemsEl = document.getElementById('factcheckItems');
+  
   btn.textContent = '核查中...';
+  document.getElementById('factcheckReport').classList.add('open');
+  itemsEl.innerHTML = '<div style="font-family:monospace;font-size:0.7rem;color:var(--gold)">正在检索并分析事实一致性...</div>';
+
   try {
-    const prompt = `核查以下文章事实。格式：ERROR|原文|正确事实|原因 或 OK|核实点。
+    const prompt = `核查以下文章事实。
+    返回格式（每行一个）：
+    ERROR|原文|正确事实|原因
+    OK|已核实的事实点
     文章：${text}`;
+    
     const report = await callClaude(key, prompt, 2000);
-    document.getElementById('factcheckReport').classList.add('open');
-    document.getElementById('factcheckItems').textContent = report;
+    const lines = report.trim().split('\n').filter(l => l.trim());
+    
+    let html = '';
+    lines.forEach(line => {
+      if (line.startsWith('ERROR|')) {
+        const parts = line.split('|');
+        if (parts.length >= 4) {
+          html += `<div class="fact-item">
+            <div class="fact-original">✗ 原文：${parts[1]}</div>
+            <div class="fact-corrected">✓ 修正：${parts[2]}</div>
+            <div class="fact-note">📌 ${parts[3]}</div>
+          </div>`;
+        }
+      } else if (line.startsWith('OK|')) {
+        html += `<div class="fact-ok">✓ 已核实：${line.slice(3)}</div>`;
+      }
+    });
+    
+    itemsEl.innerHTML = html || '<div class="fact-ok">✓ 未发现显著事实性错误</div>';
     btn.textContent = '核查完成';
-  } catch(e) { btn.textContent = '核查失败'; }
+  } catch(e) { 
+    itemsEl.innerHTML = `<div style="color:var(--accent)">核查失败: ${e.message}</div>`;
+    btn.textContent = '核查失败'; 
+  }
 }
 </script>
 </body>
