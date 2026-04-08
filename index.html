@@ -342,7 +342,7 @@
   <div class="masthead-meta">
     <div id="clockDisplay">--:--:--</div>
     <div id="dateDisplay">---- -- --</div>
-    <div style="margin-top:2px;color:var(--accent);font-weight:600">今日头条 · 评论选题</div>
+    <div style="margin-top:2px;color:var(--accent);font-weight:600">全网热榜 · 深度分析</div>
   </div>
 </div>
 
@@ -351,10 +351,11 @@
   <div style="display:flex;gap:6px;flex-shrink:0;">
     <button class="cat-btn active" id="providerClaude" onclick="switchProvider('claude')">Claude</button>
     <button class="cat-btn" id="providerDeepseek" onclick="switchProvider('deepseek')">DeepSeek</button>
+    <button class="cat-btn" id="providerGemini" onclick="switchProvider('gemini')">Gemini</button>
   </div>
   <div class="key-input-wrap">
     <label id="keyLabel">CLAUDE KEY</label>
-    <input class="key-input" id="claudeKey" type="password" placeholder="sk-ant-api03-..." autocomplete="off" oninput="saveKey(this.value)">
+    <input class="key-input" id="claudeKey" type="password" placeholder="..." autocomplete="off" oninput="saveKey(this.value)">
   </div>
   <div class="status-bar" id="statusBar">就绪 · 填入 Key 后点击分析</div>
 </div>
@@ -377,7 +378,7 @@
         <div class="empty-icon">✦</div>
         <div class="empty-msg">
           点击「开始分析」获取全网热榜<br>
-          AI 将自动筛选并平衡社会、财经、商业类话题<br>
+          AI 将自动筛选高价值选题<br>
           需要填入 <code>API Key</code>
         </div>
       </div>
@@ -409,7 +410,9 @@
         <strong>Claude Key：</strong><br>
         <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a><br><br>
         <strong>DeepSeek Key：</strong><br>
-        <a href="https://platform.deepseek.com" target="_blank">platform.deepseek.com</a>
+        <a href="https://platform.deepseek.com" target="_blank">platform.deepseek.com</a><br><br>
+        <strong>Gemini Key：</strong><br>
+        <a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a>
       </div>
     </div>
   </div>
@@ -526,17 +529,30 @@ setInterval(updateClock, 1000); updateClock();
 
 function loadKey() { return localStorage.getItem('claude_key') || ''; }
 function getProvider() { return localStorage.getItem('ai_provider') || 'claude'; }
-function saveKey(v) { const p = getProvider(); if (p === 'deepseek') localStorage.setItem('deepseek_key', v); else localStorage.setItem('claude_key', v); }
+
+// 修改后的 Key 存储逻辑
+function saveKey(v) {
+  const p = getProvider();
+  if (p === 'deepseek') localStorage.setItem('deepseek_key', v);
+  else if (p === 'gemini') localStorage.setItem('gemini_key', v);
+  else localStorage.setItem('claude_key', v);
+}
 
 function switchProvider(p) {
   localStorage.setItem('ai_provider', p);
   document.getElementById('providerClaude').classList.toggle('active', p === 'claude');
   document.getElementById('providerDeepseek').classList.toggle('active', p === 'deepseek');
+  document.getElementById('providerGemini').classList.toggle('active', p === 'gemini');
+  
   const label = document.getElementById('keyLabel');
   const input = document.getElementById('claudeKey');
+  
   if (p === 'deepseek') {
     label.textContent = 'DEEPSEEK KEY';
     input.value = localStorage.getItem('deepseek_key') || '';
+  } else if (p === 'gemini') {
+    label.textContent = 'GOOGLE GEMINI KEY';
+    input.value = localStorage.getItem('gemini_key') || '';
   } else {
     label.textContent = 'CLAUDE KEY';
     input.value = localStorage.getItem('claude_key') || '';
@@ -574,20 +590,16 @@ async function fetchHotList() {
   return all;
 }
 
-// 2. 右栏的新闻按来源分成多组显示
 function renderRawList(items, selectedIds) {
   const el = document.getElementById('rawList');
-  // 按来源分组
   const groups = {};
   items.forEach(function(item) {
     const sn = item._sourceName || '其他';
     if (!groups[sn]) groups[sn] = [];
     groups[sn].push(item);
   });
-
   let html = '';
   Object.entries(groups).forEach(function([name, gItems]) {
-    // 渲染分组标题
     html += '<div class="raw-platform-header">' + name + ' · ' + gItems.length + '条</div>';
     gItems.forEach(function(item, i) {
       const sel = selectedIds.has(item.id);
@@ -597,7 +609,6 @@ function renderRawList(items, selectedIds) {
       </div>`;
     });
   });
-  
   el.innerHTML = html;
   document.getElementById('statTotal').textContent = items.length;
 }
@@ -605,17 +616,28 @@ function renderRawList(items, selectedIds) {
 // ── AI LOGIC ──────────────────────────────────────────────
 async function callClaude(apiKey, prompt, maxTokens) {
   const provider = getProvider();
+  let model = 'claude-3-5-sonnet-20240620';
+  if (provider === 'deepseek') model = 'deepseek-chat';
+  if (provider === 'gemini') model = 'gemini-1.5-pro';
+
   const res = await fetch('/api/claude', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ apiKey, provider, payload: { model: provider==='deepseek'?'deepseek-chat':'claude-3-5-sonnet-20240620', max_tokens: maxTokens || 2000, messages: [{ role: 'user', content: prompt }] } })
+    body: JSON.stringify({ 
+      apiKey, 
+      provider, 
+      payload: { 
+        model, 
+        max_tokens: maxTokens || 2000, 
+        messages: [{ role: 'user', content: prompt }] 
+      } 
+    })
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error?.message || 'API Error');
   return data.content?.[0]?.text || '';
 }
 
-// 1. 修改筛选数量为 20 个
 async function analyzeWithClaude(items, apiKey) {
   const titles = items.map((it, i) => `${i+1}. [${it._sourceName}] ${it.title}`).join('\n');
   const prompt = `扮演资深主笔，评估以下话题评论价值。
@@ -623,9 +645,8 @@ async function analyzeWithClaude(items, apiKey) {
   1. 减少选取纯国际政治，除非有重大国内影响。
   2. 优先选取：社会民生、具有深度逻辑的财经与商业变动。
   3. 目标：筛选出 20 个具有分析空间和智识挑战的话题。
-  
   返回JSON格式: {"selected": [{"index": 1, "rating": 5, "category": "社会", "angles": ["角度1", "角度2"]}]}
-  列表:
+  话题列表：
   ${titles}`;
   const text = await callClaude(apiKey, prompt, 4000);
   return JSON.parse(text.replace(/```json|```/g, '').trim());
@@ -633,15 +654,16 @@ async function analyzeWithClaude(items, apiKey) {
 
 async function getResearchContext(apiKey, title, angle) {
   const prompt = `针对选题【${title}】和角度【${angle}】，提供背景信息。
-  包含：1. 核心新闻事实 2. 行业/经济逻辑（术语如：沉没成本、寻租空间） 3. 社会心理或背景。
+  包含：1. 核心新闻事实 2. 行业/经济逻辑（术语如：沉没成本、路径依赖） 3. 社会心理。
   只给事实和术语，严禁抒情。`;
   return await callClaude(apiKey, prompt, 1000);
 }
 
 // ── UI ACTIONS ────────────────────────────────────────────
 async function startAnalysis() {
+  const provider = getProvider();
   const key = document.getElementById('claudeKey').value.trim();
-  if (!key) return setStatus('请填入 Key', 'error');
+  if (!key) return setStatus(`请填入 ${provider.toUpperCase()} Key`, 'error');
   setStatus('深度筛选中...', 'running');
   try {
     const items = await fetchHotList();
@@ -676,7 +698,6 @@ function renderResults(items, analysis) {
   renderRawList(items, new Set(selected.map(s => items[s.index-1]?.id)));
 }
 
-// ── DRAFTING ──────────────────────────────────────────────
 function openWriteDialog(idx) {
   const data = window._topicData[idx];
   window._currentIdx = idx;
@@ -689,7 +710,6 @@ function openWriteDialog(idx) {
            <input id="customAngle" style="width:100%;display:none;margin-top:5px;" placeholder="输入角度...">`;
   document.getElementById('dialogAngles').innerHTML = html;
   document.getElementById('writeDialog').style.display = 'flex';
-  
   document.querySelectorAll('input[name="diagAngle"]').forEach(r => {
     r.onchange = () => document.getElementById('customAngle').style.display = r.value === 'custom' ? 'block' : 'none';
   });
@@ -703,12 +723,10 @@ function submitFromDialog() {
   const sel = document.querySelector('input[name="diagAngle"]:checked').value;
   if (sel === 'custom') angle = document.getElementById('customAngle').value;
   else angle = data.angles[sel];
-  
   const persona = document.querySelector('input[name="writePersona"]:checked').value;
   const style = document.querySelector('input[name="writeStyle"]:checked').value;
   const count = document.getElementById('dialogWordcount').value;
   const extra = document.getElementById('dialogExtra').value;
-  
   closeWriteDialog();
   openDraftAndWrite({ title: data.title, angle, persona, style, wordcount: count, extra });
 }
@@ -746,27 +764,18 @@ async function openDraftAndWrite({ title, angle, persona, style, wordcount, extr
     const opedPrompt = `你是一位为顶级媒体撰稿的特约评论员。基于以下资料撰写深度 Op-Ed。
 【资料】${research}
 【选题】${title} | 角度：${angle} | 目标：${wordcount}字。
-【核心指令】
-1. **反共识**：挖掘被大众忽略的非线性因果关系。
-2. **专业压制**：使用硬核术语（如寻租理论、帕累托改进等）解释现象。
-3. **消除套话**：严禁出现“随着...”、“我们要...”等公文废话。
-4. **流体结构**：不分段标注，根据论点自然展开。结尾保留一个智识反思。`;
+要求：1. 反共识。 2. 使用硬核术语（如帕累托改进、邻避效应等）。 3. 消除套话。 4. 结尾智识反思。`;
 
     const pipelinePrompt = `你是【${personas[persona]}】。结合以下深度资料写一篇评论。
     资料：${research}
     选题：${title} | 角度：${angle} | 目标：${wordcount}字。
-    要求：1. 严禁废话和低质成语。使用精准术语。 2. 结构：六段式输出。`;
+    要求：严格按六段式（破题、拆解、关联、定调、拓展、升华）输出。`;
 
-    const generalPrompt = `你是一位资深编辑。请基于资料创作评论。
-    资料：${research}
-    选题：${title} | 角度：${angle} | 目标：${wordcount}字。
-    要求：砍掉铺垫，直接进场。使用具体的行业术语，论证有力。`;
-
-    const prompt = isOpEd ? opedPrompt : (isPipeline ? pipelinePrompt : generalPrompt);
+    const prompt = isOpEd ? opedPrompt : (isPipeline ? pipelinePrompt : `基于以下资料写一篇${wordcount}字评论：${research}`);
 
     const text = await callClaude(key, prompt, 4000);
     document.getElementById('draftBody').textContent = text;
-    document.getElementById('draftWordCount').textContent = `共 ${text.length} 字（深度模式）`;
+    document.getElementById('draftWordCount').textContent = `共 ${text.length} 字`;
     document.getElementById('btnFactcheck').disabled = false;
   } catch(e) { document.getElementById('draftBody').textContent = e.message; }
 }
@@ -775,49 +784,29 @@ function closeDraft() { document.getElementById('draftOverlay').classList.remove
 function closeDraftOnBg(e) { if (e.target === document.getElementById('draftOverlay')) closeDraft(); }
 function copyDraft() { navigator.clipboard.writeText(document.getElementById('draftBody').textContent); }
 
-// 3. 事实核查分段清晰显示
 async function startFactcheck() {
   const key = document.getElementById('claudeKey').value.trim();
   const text = document.getElementById('draftBody').textContent;
   const btn = document.getElementById('btnFactcheck');
   const itemsEl = document.getElementById('factcheckItems');
-  
   btn.textContent = '核查中...';
   document.getElementById('factcheckReport').classList.add('open');
-  itemsEl.innerHTML = '<div style="font-family:monospace;font-size:0.7rem;color:var(--gold)">正在检索并分析事实一致性...</div>';
-
   try {
-    const prompt = `核查以下文章事实。
-    返回格式（每行一个）：
-    ERROR|原文|正确事实|原因
-    OK|已核实的事实点
-    文章：${text}`;
-    
+    const prompt = `核查以下文章事实。ERROR|原文|正确事实|原因 或 OK|核实点。文章：${text}`;
     const report = await callClaude(key, prompt, 2000);
     const lines = report.trim().split('\n').filter(l => l.trim());
-    
     let html = '';
     lines.forEach(line => {
       if (line.startsWith('ERROR|')) {
-        const parts = line.split('|');
-        if (parts.length >= 4) {
-          html += `<div class="fact-item">
-            <div class="fact-original">✗ 原文：${parts[1]}</div>
-            <div class="fact-corrected">✓ 修正：${parts[2]}</div>
-            <div class="fact-note">📌 ${parts[3]}</div>
-          </div>`;
-        }
+        const p = line.split('|');
+        if (p.length >= 4) html += `<div class="fact-item"><div class="fact-original">✗ ${p[1]}</div><div class="fact-corrected">✓ ${p[2]}</div><div class="fact-note">📌 ${p[3]}</div></div>`;
       } else if (line.startsWith('OK|')) {
-        html += `<div class="fact-ok">✓ 已核实：${line.slice(3)}</div>`;
+        html += `<div class="fact-ok">✓ ${line.slice(3)}</div>`;
       }
     });
-    
-    itemsEl.innerHTML = html || '<div class="fact-ok">✓ 未发现显著事实性错误</div>';
+    itemsEl.innerHTML = html || '未发现显著错误';
     btn.textContent = '核查完成';
-  } catch(e) { 
-    itemsEl.innerHTML = `<div style="color:var(--accent)">核查失败: ${e.message}</div>`;
-    btn.textContent = '核查失败'; 
-  }
+  } catch(e) { btn.textContent = '失败'; }
 }
 </script>
 </body>
