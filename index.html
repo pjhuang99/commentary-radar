@@ -12,40 +12,43 @@
   body { background: var(--paper); color: var(--ink); font-family: 'Noto Serif SC', serif; min-height: 100vh; }
   body::before { content:''; position:fixed; inset:0; background-image: repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(180,160,120,0.12) 27px, rgba(180,160,120,0.12) 28px); pointer-events:none; z-index:0; }
   .masthead { border-bottom: 3px double var(--ink); padding: 18px 40px 14px; display: flex; align-items: baseline; justify-content: space-between; background: var(--paper); z-index:1; position:relative; }
-  .masthead-title { font-family: 'Playfair Display', serif; font-size: 2.6rem; font-weight:900; letter-spacing:-1px; }
+  .masthead-title { font-family: 'Playfair Display', serif; font-size: 2.6rem; font-weight:900; letter-spacing:-1px; line-height:1; }
+  .masthead-title span { color: var(--accent); }
   .toolbar { padding: 12px 40px; border-bottom: 1px solid var(--border); background: var(--cream); display:flex; align-items:center; gap:16px; position:sticky; top:0; z-index:10; }
-  .btn-fetch { font-family:'JetBrains Mono', monospace; font-size:0.75rem; font-weight:600; background: var(--ink); color: var(--paper); border:none; padding:8px 20px; cursor:pointer; }
-  .key-input { font-family:'JetBrains Mono', monospace; font-size:0.7rem; border: 1px solid var(--border); background: var(--paper); padding:6px 10px; width: 250px; outline:none; }
-  .layout { display:grid; grid-template-columns: 1fr 340px; min-height: 80vh; position:relative; z-index:1; }
+  .btn-fetch { font-family:'JetBrains Mono', monospace; font-size:0.75rem; font-weight:600; background: var(--ink); color: var(--paper); border:none; padding:8px 20px; cursor:pointer; transition: background 0.15s; }
+  .key-input-wrap { display:flex; align-items:center; gap:8px; flex:1; max-width:420px; }
+  .key-input { font-family:'JetBrains Mono', monospace; font-size:0.7rem; border: 1px solid var(--border); background: var(--paper); padding:6px 10px; flex:1; outline:none; }
+  .layout { display:grid; grid-template-columns: 1fr 340px; min-height: calc(100vh - 120px); position:relative; z-index:1; }
   .main-col { padding: 28px 36px; border-right:1px solid var(--border); }
   .side-col { padding:24px 24px; }
-  .topic-card { padding: 20px 0; border-bottom: 1px solid rgba(180,160,120,0.3); display:grid; grid-template-columns: 36px 1fr; gap:12px; }
-  .card-rank { font-family:'Playfair Display', serif; font-size:1.4rem; font-weight:900; color:var(--border); }
+  .topic-card { padding: 20px 0; border-bottom: 1px solid rgba(180,160,120,0.3); display:grid; grid-template-columns: 36px 1fr; gap:12px; animation: fadeIn 0.3s ease both; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+  .card-rank { font-family:'Playfair Display', serif; font-size:1.4rem; font-weight:900; color:var(--border); line-height:1; }
   .card-title a { color:inherit; text-decoration:none; font-weight:700; font-size:1.1rem; }
   .card-title a:hover { color: var(--accent); }
   .angle-item { display:flex; align-items:flex-start; gap:8px; font-size:0.85rem; line-height:1.6; color:var(--ink); margin-top:8px; }
   .angle-num { font-family:'JetBrains Mono', monospace; font-size:0.6rem; color:var(--paper); background: var(--muted); padding:1px 5px; margin-top:3px; flex-shrink:0; }
   .raw-platform-header { font-family:'JetBrains Mono', monospace; font-size:0.6rem; font-weight:600; color:var(--paper); background:var(--ink); padding:3px 8px; margin:15px 0 5px; }
   .raw-item { display:flex; align-items:baseline; gap:10px; padding:6px 0; border-bottom:1px solid rgba(0,0,0,0.05); font-size:0.75rem; }
-  .free-write-section { border-top:3px double var(--ink); padding:40px 36px; background:var(--cream); }
+  .free-write-section { border-top:3px double var(--ink); padding:40px 36px; background:var(--cream); position:relative; z-index:1; }
   .draft-overlay { position:fixed; inset:0; background:rgba(26,18,8,0.95); z-index:100; display:none; align-items:center; justify-content:center; padding:24px; }
   .draft-overlay.open { display:flex; }
   .draft-box { background:var(--paper); width:100%; max-width:850px; max-height:92vh; display:flex; flex-direction:column; border:2px solid var(--ink); box-shadow: 0 30px 60px rgba(0,0,0,0.4); }
   .draft-body { padding:30px; overflow-y:auto; flex:1; font-size:1.05rem; line-height:2.2; white-space:pre-wrap; }
-  .factcheck-report { padding:20px; border-top:1px solid var(--border); background:var(--cream); font-size:0.8rem; max-height:250px; overflow-y:auto; }
+  .factcheck-report { padding:20px; border-top:1px solid var(--border); background:var(--cream); font-size:0.8rem; display:none; max-height:300px; overflow-y:auto; }
   .fact-item { margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid rgba(0,0,0,0.1); }
   .fact-original { color:var(--accent); text-decoration:line-through; }
   .fact-corrected { color:var(--green); font-weight:600; }
-  .fact-link { color:var(--blue); text-decoration:underline; display:block; margin-top:4px; font-size:0.7rem; }
+  .fact-link { color:var(--blue); text-decoration:underline; display:block; margin-top:4px; font-size:0.75rem; }
   .cat-btn { font-family:'JetBrains Mono', monospace; font-size:0.62rem; font-weight:600; padding:5px 15px; cursor:pointer; border:1px solid var(--border); background:transparent; }
   .cat-btn.active { background:var(--ink); color:var(--paper); }
-  .write-num { font-family:'JetBrains Mono', monospace; font-size:0.8rem; border:1px solid var(--border); padding:10px; background:var(--paper); }
+  .write-num { font-family:'JetBrains Mono', monospace; font-size:0.8rem; border:1px solid var(--border); padding:10px; background:var(--paper); outline:none; }
 </style>
 </head>
 <body>
 
 <div class="masthead">
-  <div><div class="masthead-title">时评<span>雷达</span></div><div class="masthead-sub">Today's Intelligence - 04.08 Fixed Version</div></div>
+  <div><div class="masthead-title">时评<span>雷达</span></div><div class="masthead-sub">Today's Intelligence for Professional Writers</div></div>
   <div style="font-family:monospace; font-size:0.7rem;" id="clockDisplay"></div>
 </div>
 
@@ -88,14 +91,23 @@
         </div>
         <div>
             <label style="font-size:0.65rem; color:var(--muted)">文章模式</label>
-            <select id="freeStyle" class="write-num" style="width:100%"><option value="pipeline">硬核六段式</option><option value="oped">深度 Op-Ed</option><option value="general">通用评论</option></select>
+            <select id="freeStyle" class="write-num" style="width:100%">
+                <option value="pipeline">硬核六段式 (社会评论)</option>
+                <option value="oped">深度 Op-Ed (反共识视角)</option>
+                <option value="general">通用评论</option>
+            </select>
         </div>
         <div>
             <label style="font-size:0.65rem; color:var(--muted)">写作立场</label>
-            <select id="freePersona" class="write-num" style="width:100%"><option value="editor">主流情绪</option><option value="scholar">中立学者</option><option value="conservative">保守派</option><option value="radical">激进派</option></select>
+            <select id="freePersona" class="write-num" style="width:100%">
+                <option value="editor">主流情绪</option>
+                <option value="scholar">中立学者</option>
+                <option value="conservative">保守派</option>
+                <option value="radical">激进派</option>
+            </select>
         </div>
         <div style="grid-column: 1/-1">
-            <label style="font-size:0.65rem; color:var(--muted)">核心论点</label>
+            <label style="font-size:0.65rem; color:var(--muted)">核心论点 / 写作方向</label>
             <textarea id="freeAngle" class="write-num" style="width:100%; height:80px; font-family:serif;" placeholder="描述你的切入视角或论点..."></textarea>
         </div>
     </div>
@@ -103,12 +115,29 @@
 </div>
 
 <div id="writeDialog" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:200; align-items:center; justify-content:center;">
-    <div style="background:var(--paper); width:90%; max-width:550px; padding:35px; border:2px solid var(--ink); position:relative;">
-        <div id="dialogTitle" style="font-weight:900; font-size:1.2rem; margin-bottom:20px;"></div>
-        <div id="dialogAngles" style="margin-bottom:20px; background:var(--cream); padding:15px; border:1px solid var(--border)"></div>
+    <div style="background:var(--paper); width:90%; max-width:600px; padding:35px; border:2px solid var(--ink); position:relative;">
+        <div id="dialogTitle" style="font-weight:900; font-size:1.2rem; margin-bottom:20px; line-height:1.4"></div>
+        <div style="font-family:monospace; font-size:0.65rem; color:var(--muted); margin-bottom:8px">选择写作角度 (可多选)</div>
+        <div id="dialogAngles" style="margin-bottom:20px; background:var(--cream); padding:15px; border:1px solid var(--border); max-height:220px; overflow-y:auto;"></div>
+        
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:25px;">
-            <select id="diagStyle" class="write-num"><option value="pipeline">六段式结构</option><option value="oped">深度 Op-Ed</option></select>
-            <select id="diagPersona" class="write-num"><option value="editor">主流情绪</option><option value="scholar">中立学者</option></select>
+            <div>
+                <label style="font-size:0.65rem; color:var(--muted); display:block; margin-bottom:5px">文章类型</label>
+                <select id="diagStyle" class="write-num" style="width:100%">
+                    <option value="pipeline">社会评论 (六段式)</option>
+                    <option value="oped">深度 Op-Ed</option>
+                    <option value="general">通用评论</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size:0.65rem; color:var(--muted); display:block; margin-bottom:5px">写作立场</label>
+                <select id="diagPersona" class="write-num" style="width:100%">
+                    <option value="editor">主流情绪</option>
+                    <option value="scholar">中立学者</option>
+                    <option value="conservative">保守派</option>
+                    <option value="radical">激进派</option>
+                </select>
+            </div>
         </div>
         <div style="text-align:right">
             <button onclick="closeWriteDialog()" style="background:none; border:none; margin-right:15px; cursor:pointer; font-family:monospace">CANCEL</button>
@@ -119,13 +148,16 @@
 
 <div class="draft-overlay" id="draftOverlay">
     <div class="draft-box">
-        <div class="masthead" style="padding:15px 25px"><div id="draftTitle" style="font-weight:700"></div><button onclick="closeDraft()" style="cursor:pointer">✕</button></div>
+        <div class="masthead" style="padding:15px 25px"><div id="draftTitle" style="font-weight:700"></div><button onclick="closeDraft()" style="cursor:pointer; background:none; border:none; font-size:1.2rem">✕</button></div>
         <div class="draft-body" id="draftBody"></div>
-        <div class="factcheck-report" id="factcheckReport" style="display:none"><div id="factcheckItems"></div></div>
+        <div class="factcheck-report" id="factcheckReport" style="display:none">
+            <div style="font-family:monospace; font-size:0.6rem; color:var(--muted); margin-bottom:10px;">FACT-CHECK REPORT</div>
+            <div id="factcheckItems"></div>
+        </div>
         <div style="padding:15px 25px; text-align:right; background:var(--cream); border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
-            <div id="wordCount" style="font-family:monospace; font-size:0.7rem;"></div>
+            <div id="wordCount" style="font-family:monospace; font-size:0.7rem; color:var(--muted)"></div>
             <div>
-                <button id="btnFactcheck" class="cat-btn" onclick="startFactcheck()" disabled>🔍 核查事实并追溯信源</button>
+                <button id="btnFactcheck" class="cat-btn" onclick="startFactcheck()" disabled style="border-color:var(--green); color:var(--green)">🔍 核查事实与溯源</button>
                 <button class="btn-fetch" onclick="copyDraft()" style="padding:6px 20px; margin-left:10px;">复制纯文本全文</button>
             </div>
         </div>
@@ -175,7 +207,7 @@ async function startAnalysis() {
         
         const groups = {};
         allItems.forEach(it => { if(!groups[it._sourceName]) groups[it._sourceName]=[]; groups[it._sourceName].push(it); });
-        document.getElementById('rawList').innerHTML = Object.entries(groups).map(([name, list]) => `<div class="raw-platform-header">${name}</div>` + list.slice(0,6).map((it, i) => `<div class="raw-item"><span>${i+1}</span><a href="${it.url}" target="_blank" style="color:inherit; text-decoration:none; margin-left:10px">${it.title}</a></div>`).join('')).join('');
+        document.getElementById('rawList').innerHTML = Object.entries(groups).map(([name, list]) => `<div class="raw-platform-header">${name}</div>` + list.slice(0,6).map((it, i) => `<div class="raw-item"><span style="color:var(--muted);width:20px">${i+1}</span><a href="${it.url}" target="_blank" style="color:inherit; text-decoration:none">${it.title}</a></div>`).join('')).join('');
         
         const titles = allItems.slice(0, 80).map((it, i) => `${i+1}. [${it._sourceName}] ${it.title}`).join('\n');
         const text = await callClaude(key, `请从以下榜单筛选出 20 个值得写深度评论的话题。返回JSON: {"selected": [{"index":序号, "angles":["视角1", "视角2"]}]}\n列表：\n${titles}`, 4000);
@@ -188,6 +220,7 @@ async function startAnalysis() {
             return `<div class="topic-card"><div class="card-rank">${i+1}</div><div class="card-body"><div class="card-title"><a href="${item.url}" target="_blank">${item.title}</a></div><div class="card-angles">${s.angles.map(a => `<div class="angle-item"><span class="angle-num">视角</span>${a}</div>`).join('')}</div><button onclick="openWriteDialog(${i})" style="margin-top:15px; cursor:pointer; padding:4px 12px; border:1px solid var(--gold); color:var(--gold); background:transparent">✍ 写这篇</button></div></div>`;
         }).join('');
         document.getElementById('statusBar').textContent = '分析完成';
+        document.getElementById('resultCount').textContent = analysis.selected.length + ' SELECTIONS';
     } catch(e) { alert(e.message); }
 }
 
@@ -196,16 +229,45 @@ function openWriteDialog(idx) {
     if(!data) return alert('数据加载失败');
     window._currentIdx = idx;
     document.getElementById('dialogTitle').textContent = data.title;
-    document.getElementById('dialogAngles').innerHTML = data.angles.map((a, i) => `<label style="display:block; margin-bottom:10px; cursor:pointer; font-size:0.9rem"><input type="radio" name="angle" value="${i}" ${i===0?'checked':''}> ${a}</label>`).join('');
+    
+    // 修复点2：改为多选Checkbox并加入自定义框
+    let html = data.angles.map((a, i) => 
+        `<label style="display:block; margin-bottom:10px; cursor:pointer; font-size:0.9rem"><input type="checkbox" name="angleCheck" value="${i}" ${i===0?'checked':''}> ${a}</label>`
+    ).join('');
+    html += `<label style="display:block; margin-bottom:10px; cursor:pointer; font-size:0.9rem"><input type="checkbox" id="customAngleToggle"> 自定义视角...</label>`;
+    html += `<input type="text" id="customAngleInput" class="write-num" style="width:100%; display:none;" placeholder="输入你的自定义视角，将与其他选项融合...">`;
+    
+    document.getElementById('dialogAngles').innerHTML = html;
+    
+    document.getElementById('customAngleToggle').onchange = function() {
+        document.getElementById('customAngleInput').style.display = this.checked ? 'block' : 'none';
+    };
+    
     document.getElementById('writeDialog').style.display = 'flex';
 }
+
 function closeWriteDialog() { document.getElementById('writeDialog').style.display = 'none'; }
 
 async function submitFromDialog() {
     const data = window._topicData[window._currentIdx];
-    const angle = data.angles[document.querySelector('input[name="angle"]:checked').value];
+    
+    // 提取选中的视角
+    let selectedAngles = [];
+    document.querySelectorAll('input[name="angleCheck"]:checked').forEach(cb => {
+        selectedAngles.push(data.angles[cb.value]);
+    });
+    if(document.getElementById('customAngleToggle').checked) {
+        const customVal = document.getElementById('customAngleInput').value.trim();
+        if(customVal) selectedAngles.push(customVal);
+    }
+    if(selectedAngles.length === 0) return alert('请至少勾选或填写一个写作视角！');
+    
+    const combinedAngle = selectedAngles.join('；同时融合视角：');
+    
+    const style = document.getElementById('diagStyle').value;
+    const persona = document.getElementById('diagPersona').value;
     closeWriteDialog();
-    executeWorkflow(data.title, angle, document.getElementById('diagStyle').value, document.getElementById('diagPersona').value);
+    executeWorkflow(data.title, combinedAngle, style, persona);
 }
 
 function submitFreeWrite() {
@@ -218,20 +280,30 @@ async function executeWorkflow(title, angle, style, persona) {
     const overlay = document.getElementById('draftOverlay');
     overlay.classList.add('open');
     const body = document.getElementById('draftBody');
-    body.innerHTML = '<div style="text-align:center; padding:50px; font-family:monospace;">PHASE 1: 正在研究深度背景素材...</div>';
+    body.innerHTML = '<div style="text-align:center; padding:50px; font-family:monospace;">PHASE 1: 正在检索行业事实与经济逻辑...</div>';
+    document.getElementById('factcheckReport').style.display = 'none';
+    document.getElementById('btnFactcheck').disabled = true;
     
     try {
         const key = localStorage.getItem(getProvider() + '_key');
         const research = await callClaude(key, `针对选题【${title}】和视角【${angle}】，提供核心事实背景和硬核行业逻辑。严禁抒情。`, 1200);
         body.innerHTML = '<div style="text-align:center; padding:50px; font-family:monospace; color:var(--green)">PHASE 2: 正在构建硬核深度评论...</div>';
         
-        let prompt = `你是【${persona}】。结合以下背景资料写一篇1200字硬核评论：${research}。选题：${title}。角度：${angle}。要求：拒绝套话，使用专业术语。`;
-        if(style === 'oped') prompt = `写一篇深度 Op-Ed 评论。要求：反共识视角、智识压制、流体思维。选题：${title}。视角：${angle}。资料：${research}`;
+        const personasDesc = {
+            editor: "主流情绪(寻找大众最大公约数)", scholar: "中立学者(强调客观结构和理论建模)", conservative: "保守派(强调秩序与传统)", radical: "激进派(强调打破既得利益结构)"
+        };
+        
+        let prompt = `你是【${personasDesc[persona]}】。结合以下背景资料写一篇1200字硬核评论。
+资料：${research}
+选题：${title} | 角度(多维融合)：${angle}
+要求：拒绝套话，使用专业术语。`;
+        
+        if(style === 'oped') prompt = `写一篇深度 Op-Ed 评论。要求：反共识视角、智识压制、流体思维不硬性分段。选题：${title}。视角：${angle}。资料：${research}`;
         else if(style === 'pipeline') prompt += " 结构：破题（特写）、拆解（因果）、关联（痛点）、定调（金句）、追问（对标）、升华（共鸣）。";
 
         const raw = await callClaude(key, prompt, 4000);
-        // 核心修改1：去掉粗体符号
-        const cleaned = raw.replace(/\*\*/g, '');
+        const cleaned = raw.replace(/\*\*/g, ''); // 自动剔除 Markdown 加粗符号
+        
         body.textContent = cleaned;
         document.getElementById('draftTitle').textContent = title;
         document.getElementById('wordCount').textContent = cleaned.length + ' 字';
@@ -239,21 +311,49 @@ async function executeWorkflow(title, angle, style, persona) {
     } catch(e) { body.innerHTML = `生成失败: ${e.message}`; }
 }
 
+// 修复点1：增强容错的事实核查解析
 async function startFactcheck() {
     const itemsEl = document.getElementById('factcheckItems');
     document.getElementById('factcheckReport').style.display = 'block';
-    itemsEl.textContent = '正在核查事实并搜索信源...';
+    itemsEl.innerHTML = '<div style="font-family:monospace; color:var(--gold)">正在检索全网信源并核查事实...</div>';
+    
     try {
         const key = localStorage.getItem(getProvider() + '_key');
-        // 核心修改2：强制要求标题和链接
-        const report = await callClaude(key, `核查文章事实。对于每个核查点，必须提供可搜索的新闻标题和参考链接。格式：ERROR|原文|事实|原因|标题|链接 或 OK|事实|标题|链接。内容：${document.getElementById('draftBody').textContent}`, 2500);
-        itemsEl.innerHTML = report.split('\n').filter(l=>l.trim()).map(line => {
+        const prompt = `核查以下评论文章的事实真实性。
+必须尝试提供可搜索的新闻标题和参考链接（若无链接可填无）。
+严格按以下格式输出（每行一个）：
+ERROR|原文表述|正确事实|原因|参考标题|参考链接
+OK|已核实事实|参考标题|参考链接
+
+文章内容：\n${document.getElementById('draftBody').textContent}`;
+        
+        const report = await callClaude(key, prompt, 2500);
+        const lines = report.split('\n').filter(l => l.trim() && (l.startsWith('ERROR|') || l.startsWith('OK|')));
+        
+        if (lines.length === 0) {
+            itemsEl.innerHTML = `<div style="color:var(--muted)">模型未按规范格式返回数据，原始内容供参考：<br><br>${report.replace(/\n/g, '<br>')}</div>`;
+            return;
+        }
+
+        itemsEl.innerHTML = lines.map(line => {
             const p = line.split('|');
-            if(line.startsWith('ERROR|') && p.length >= 6) return `<div class="fact-item"><div class="fact-original">✗ ${p[1]}</div><div class="fact-corrected">✓ ${p[2]}</div><a class="fact-link" href="${p[5]}" target="_blank">信源：${p[4]}</a></div>`;
-            if(line.startsWith('OK|') && p.length >= 4) return `<div class="fact-ok">✓ ${p[1]} <a class="fact-link" href="${p[3]}" target="_blank" style="display:inline; margin-left:10px">核实源：${p[2]}</a></div>`;
+            if(line.startsWith('ERROR|')) {
+                const link = p[5] && p[5].startsWith('http') ? p[5] : '#';
+                return `<div class="fact-item">
+                    <div class="fact-original">✗ ${p[1] || '未知'}</div>
+                    <div class="fact-corrected">✓ ${p[2] || '修正建议缺失'}</div>
+                    <a class="fact-link" href="${link}" target="_blank">来源：${p[4] || '未提供'}</a>
+                </div>`;
+            } else if (line.startsWith('OK|')) {
+                const link = p[3] && p[3].startsWith('http') ? p[3] : '#';
+                return `<div class="fact-ok">
+                    ✓ ${p[1] || '已核实'}
+                    <a class="fact-link" href="${link}" target="_blank" style="display:inline; margin-left:10px">核实源：${p[2] || '未提供'}</a>
+                </div>`;
+            }
             return '';
         }).join('');
-    } catch(e) { itemsEl.textContent = '核查异常'; }
+    } catch(e) { itemsEl.innerHTML = `<div style="color:var(--accent)">核查异常: ${e.message}</div>`; }
 }
 
 function closeDraft() { document.getElementById('draftOverlay').classList.remove('open'); }
