@@ -11,9 +11,9 @@ export default async function handler(req, res) {
     let response;
 
     if (provider === 'gemini') {
-      // ── Google Gemini AI Studio (使用 v1 稳定版接口) ──
-      // 建议使用 gemini-1.5-pro 或 gemini-1.5-flash
-      const modelName = payload.model || 'gemini-1.5-pro';
+      // 使用 gemini-1.5-flash 作为默认值，它更稳定且速度更快
+      const modelName = payload.model || 'gemini-1.5-flash';
+      // 使用 v1 接口
       const url = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`;
       
       response = await fetch(url, {
@@ -25,28 +25,24 @@ export default async function handler(req, res) {
             parts: [{ text: m.content }]
           })),
           generationConfig: {
-            maxOutputTokens: payload.max_tokens || 4096,
+            maxOutputTokens: payload.max_tokens || 4000,
             temperature: 0.7,
           }
         }),
       });
 
       const data = await response.json();
-
       if (!response.ok) {
-        // 如果 v1 报错，尝试返回详细错误信息
         return res.status(response.status).json({ 
-          error: data.error || { message: "Gemini API 请求失败" } 
+          error: data.error || { message: "Gemini API 链接失败，请确认模型名称是否正确。" } 
         });
       }
 
-      // 转换为前端统一的 Claude 格式
       return res.status(200).json({
         content: [{ type: 'text', text: data.candidates?.[0]?.content?.parts?.[0]?.text || '' }]
       });
 
     } else if (provider === 'deepseek') {
-      // ── DeepSeek 逻辑保持不变 ──
       response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -64,9 +60,8 @@ export default async function handler(req, res) {
       return res.status(200).json({
         content: [{ type: 'text', text: data.choices?.[0]?.message?.content || '' }]
       });
-
     } else {
-      // ── Claude 逻辑保持不变 ──
+      // Claude 默认逻辑
       response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
