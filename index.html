@@ -69,7 +69,7 @@
 <body>
 
 <div class="masthead">
-  <div><div class="masthead-title">时评<span>雷达</span></div><div class="masthead-sub">Fact-Driven Commentary Tool</div></div>
+  <div><div class="masthead-title">时评<span>雷达</span></div><div class="masthead-sub">RAG-Powered Commentary Tool</div></div>
   <div style="font-family:monospace; font-size:0.7rem;" id="clockDisplay"></div>
 </div>
 
@@ -129,6 +129,10 @@
         <div>
             <label class="field-label">目标字数</label>
             <input type="number" id="freeWordcount" class="write-num" value="1000" step="500" min="500" max="3000">
+        </div>
+        <div>
+            <label class="field-label">参考链接 (可选，用于抓取事实)</label>
+            <input type="text" id="freeUrl" class="write-num" placeholder="粘贴新闻网页链接...">
         </div>
         <div class="free-write-full">
             <label class="field-label">核心观点 / 补充细节</label>
@@ -258,7 +262,7 @@ async function startAnalysis() {
         document.getElementById('resultList').innerHTML = analysis.selected.map((s, i) => {
             const item = allItems[s.index-1];
             if(!item) return '';
-            window._topicData[i] = { title: item.title, angles: s.angles, url: item.url };
+            window._topicData[i] = { title: item.title, angles: s.angles, url: item.url, sourceName: item._sourceName };
             return `<div class="topic-card">
                 <div class="card-rank">${String(i+1).padStart(2,'0')}</div>
                 <div class="card-body">
@@ -310,13 +314,12 @@ async function submitFromDialog() {
     if(selectedAngles.length === 0) return alert('请至少勾选或填写一个写作视角！');
     
     const combinedAngle = selectedAngles.join('；同时融合：');
-    
     const style = document.getElementById('diagStyle').value;
     const persona = document.getElementById('diagPersona').value;
     const wordcount = document.getElementById('diagWordcount').value;
 
     closeWriteDialog();
-    executeWorkflow(data.title, combinedAngle, style, persona, wordcount);
+    executeWorkflow(data.title, combinedAngle, style, persona, wordcount, data.url, data.sourceName);
 }
 
 function submitFreeWrite() {
@@ -327,30 +330,53 @@ function submitFreeWrite() {
     const style = document.getElementById('freeStyle').value;
     const persona = document.getElementById('freePersona').value;
     const wordcount = document.getElementById('freeWordcount').value;
+    const url = document.getElementById('freeUrl').value.trim();
 
-    executeWorkflow(t, a, style, persona, wordcount);
+    executeWorkflow(t, a, style, persona, wordcount, url, '外部链接');
 }
 
-async function executeWorkflow(title, angle, style, persona, wordcount) {
+async function executeWorkflow(title, angle, style, persona, wordcount, url, sourceName) {
     const overlay = document.getElementById('draftOverlay');
     overlay.classList.add('open');
+    document.getElementById('draftTitle').textContent = title;
     const body = document.getElementById('draftBody');
-    body.innerHTML = '<div style="text-align:center; padding:50px; font-family:monospace; color:var(--gold)">PHASE 1: 正在检索 5W1H 新闻细节与事实资料...</div>';
-    
     document.getElementById('factcheckReport').style.display = 'none';
     document.getElementById('btnFactcheck').disabled = true;
     document.getElementById('btnRevise').classList.remove('active');
     window._pendingCorrections = [];
 
+    let sourceContent = "无法获取外部网页原文，请依赖模型内部知识库进行背景分析。";
+    
+    if (url && url.startsWith('http')) {
+        try {
+            body.innerHTML = `<div style="text-align:center; padding:50px; font-family:monospace; color:var(--gold)">PHASE 1: 正在跨域读取原始新闻网页素材...<br><span style="font-size:0.7rem; color:var(--muted)">目标源: ${sourceName || '未知'}</span></div>`;
+            const jinaRes = await fetch('https://r.jina.ai/' + url);
+            if (jinaRes.ok) {
+                const rawText = await jinaRes.text();
+                sourceContent = rawText.substring(0, 4000); 
+            }
+        } catch(e) {
+            console.warn("Jina 抓取失败", e);
+        }
+    } else {
+        body.innerHTML = '<div style="text-align:center; padding:50px; font-family:monospace; color:var(--gold)">PHASE 1: 未提供链接，正在基于内部知识库检索事实...</div>';
+    }
+
     try {
         const key = localStorage.getItem(getProvider() + '_key');
         
-        const researchPrompt = `你是一位调查记者。针对选题【${title}】和视角【${angle}】，提取最鲜活的新闻细节。
-        包含：1. 5W1H事实清单（时间、地点、人名、确切数据）。 2. 具有现场感的动作或场景还原。 3. 相关行业常识。
-        严禁任何主观评价，只列客观事实，字数500字内。`;
+        let researchPrompt = `你是一位深度调查记者。针对选题【${title}】和视角【${angle}】，请基于以下提供的【原始参考素材】提取最鲜活的新闻细节。`;
+        
+        if (sourceName === '今日头条') {
+            researchPrompt += `\n注意：该素材可能来自话题聚合页，请提取涉及的多方观点、最新进展和核心事实清单。`;
+        } else {
+            researchPrompt += `\n注意：请重点提取文章中的 5W1H 事实清单、场景还原和核心数据。`;
+        }
+        
+        researchPrompt += `\n【原始参考素材】：\n${sourceContent}\n\n严禁主观评价，只列客观事实，字数500字内。`;
         
         const research = await callClaude(key, researchPrompt, 1500);
-        body.innerHTML = '<div style="text-align:center; padding:50px; font-family:monospace; color:var(--green)">PHASE 2: 事实已抓取，正在进行深度排版创作...</div>';
+        body.innerHTML = '<div style="text-align:center; padding:50px; font-family:monospace; color:var(--green)">PHASE 2: 网页事实已结构化完毕，正在进行深度排版创作...</div>';
         
         const personasDesc = {
             reporter: "冷峻的特稿记者 (白描手法，拒绝情绪词汇)",
@@ -362,7 +388,9 @@ async function executeWorkflow(title, angle, style, persona, wordcount) {
 【深度素材】${research}
 【选题】${title} | 【多维融合视角】${angle}
 
-【重要禁忌】：严禁使用 Markdown 加粗符号（**）。禁止使用“让人痛心”、“我们要...”等公文或情绪套话。`;
+【重要指令】：
+1. 请务必在正文最开头，提供 3 个具有吸引力且侧重点不同的文章备选标题（格式为：【备选标题一】... 【备选标题二】... 【备选标题三】...），然后再开始正文内容。
+2. 严禁使用 Markdown 加粗符号（**）。禁止使用“让人痛心”、“我们要...”等公文套话。`;
 
         if(style === 'fact_first') {
             prompt += "\n模式：新闻实录。请将 70% 的篇幅用于复述素材中的事实细节，分析应点到为止或放在文末。";
@@ -376,7 +404,6 @@ async function executeWorkflow(title, angle, style, persona, wordcount) {
         const cleaned = raw.replace(/\*\*/g, '');
         
         body.innerHTML = cleaned.replace(/\n/g, '<br>');
-        document.getElementById('draftTitle').textContent = title;
         document.getElementById('wordCount').textContent = cleaned.length + ' 字符';
         document.getElementById('btnFactcheck').disabled = false;
     } catch(e) { body.innerHTML = `<div style="color:var(--accent)">生成失败: ${e.message}</div>`; }
