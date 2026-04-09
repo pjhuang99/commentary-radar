@@ -109,7 +109,7 @@
   .card-title a { color:inherit; text-decoration:none; font-weight:600; }
   .card-title a:hover { color:var(--accent); }
   .card-angles { display:flex; flex-direction:column; gap:5px; margin-top:8px;}
-  .angle-item { display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; line-height:1.5; color:var(--ink); }
+  .angle-item { display:flex; align-items:flex-start; gap:8px; font-size:0.8rem; line-height:1.5; color:var(--ink); margin-top:5px; }
   .angle-num { font-family:'JetBrains Mono', monospace; font-size:0.6rem; color:var(--paper); background: var(--muted); padding:1px 5px; margin-top:3px; flex-shrink:0; }
 
   /* ── SIDEBAR ── */
@@ -125,7 +125,6 @@
   .free-write-full { grid-column:1/-1; }
   .field-label { font-family:'JetBrains Mono', monospace; font-size:0.65rem; color:var(--muted); margin-bottom:8px; display:block; text-transform:uppercase; letter-spacing:1px; }
   .free-textarea { font-family:'Noto Serif SC', serif; font-size:0.9rem; border:1px solid var(--border); background:var(--paper); padding:12px; color:var(--ink); width:100%; outline:none; resize:vertical; line-height:1.6; }
-  .free-textarea:focus { border-color:var(--gold); box-shadow: 0 0 8px rgba(184,134,11,0.1); }
   
   /* ── DRAFT OVERLAY ── */
   .draft-overlay { position:fixed; inset:0; background:rgba(26,18,8,0.9); z-index:100; display:none; align-items:center; justify-content:center; padding:24px; }
@@ -133,11 +132,12 @@
   .draft-box { background:var(--paper); width:100%; max-width:800px; max-height:92vh; display:flex; flex-direction:column; border:2px solid var(--ink); box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
   .draft-header { padding:16px 24px; border-bottom:2px solid var(--ink); display:flex; align-items:center; justify-content:space-between; background:var(--paper); }
   .draft-body { padding:30px; overflow-y:auto; flex:1; font-size:1.05rem; line-height:2; white-space:pre-wrap; }
-  .factcheck-report { padding:20px 24px; border-top:1px solid var(--border); background:var(--cream); font-size:0.8rem; display:none; max-height:250px; overflow-y:auto; }
+  .factcheck-report { padding:20px 24px; border-top:1px solid var(--border); background:var(--cream); font-size:0.8rem; display:none; max-height:250px; overflow-y:auto; flex-shrink:0; }
   .fact-item { margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid rgba(180,160,120,0.2); }
   .fact-original { color:var(--accent); text-decoration:line-through; margin-bottom:4px; font-size:0.85rem; }
   .fact-corrected { color:var(--green); font-weight:600; margin-bottom:4px; }
-  .fact-ok { color:var(--green); margin-bottom:6px; display:block; }
+  .fact-link { color:var(--blue); text-decoration:underline; font-size:0.7rem; display:block; margin-top:4px; }
+  .fact-ok { color:var(--green); margin-bottom:10px; display:block; }
   
   .cat-btn { font-family:'JetBrains Mono', monospace; font-size:0.62rem; font-weight:600; padding:4px 12px; cursor:pointer; border:1px solid var(--border); background:transparent; transition: all 0.15s; }
   .cat-btn.active { background:var(--ink); color:var(--paper); border-color:var(--ink); }
@@ -148,10 +148,7 @@
 
 <div class="masthead">
   <div><div class="masthead-title">时评<span>雷达</span></div><div class="masthead-sub">Today's Intelligence for Professional Writers</div></div>
-  <div class="masthead-meta">
-    <div id="clockDisplay">--:--:--</div>
-    <div style="font-size:0.6rem;color:var(--accent);margin-top:4px;font-weight:700">VERSION 2.1 · 深度研究模式已激活</div>
-  </div>
+  <div class="masthead-meta"><div id="clockDisplay">--:--:--</div></div>
 </div>
 
 <div class="toolbar">
@@ -172,12 +169,7 @@
   <div class="main-col">
     <div class="section-header">
       <div class="section-title">今日推荐选题</div>
-      <div id="resultCount" style="font-size:0.7rem;color:var(--muted);font-family:monospace">--</div>
-    </div>
-    <div class="cat-filters" style="margin-bottom:20px;display:flex;gap:8px">
-        <button class="cat-btn active" onclick="filterCat('全部', this)">全部</button>
-        <button class="cat-btn" onclick="filterCat('时政社会', this)">时政社会</button>
-        <button class="cat-btn" onclick="filterCat('财经商业', this)">财经商业</button>
+      <div id="resultCount" style="font-size:0.7rem;color:var(--muted);font-family:monospace">-- SELECTIONS</div>
     </div>
     <div id="resultList">
         <div style="padding:100px 0;text-align:center;color:var(--border)">点击“开始分析”获取今日高价值选题</div>
@@ -185,91 +177,53 @@
   </div>
   <div class="side-col">
     <div class="side-title" style="font-family:monospace;font-size:0.7rem;margin-bottom:15px;text-transform:uppercase;letter-spacing:1px">全网热榜预览 <span id="statTotal" style="color:var(--accent)">--</span></div>
-    <div class="raw-list" id="rawList">
-        <div style="text-align:center;padding:40px;color:var(--border);font-size:0.8rem">等待数据加载...</div>
-    </div>
+    <div class="raw-list" id="rawList"></div>
   </div>
 </div>
 
 <div class="free-write-section">
-    <div class="section-header">
-        <div class="section-title">自由创作中心</div>
-        <div style="font-size:0.7rem;color:var(--muted)">自定义选题与深度逻辑注入</div>
-    </div>
+    <div class="section-title">自由创作中心</div>
     <div class="free-write-grid">
         <div class="free-write-full">
             <label class="field-label">文章标题 / 选题</label>
             <input class="free-textarea" id="freeTitle" style="height:46px;" placeholder="在此输入你想写的话题...">
         </div>
         <div>
-            <label class="field-label">文章类型</label>
+            <label class="field-label">文章模式</label>
             <select id="freeStyle" class="write-num" style="width:100%;height:46px;">
-                <option value="pipeline">社会评论 (硬核六段式)</option>
+                <option value="pipeline">硬核六段式 (社会评论)</option>
                 <option value="oped">深度 Op-Ed (反共识视角)</option>
-                <option value="general">通用评论 (标准模式)</option>
-            </select>
-        </div>
-        <div>
-            <label class="field-label">写作立场</label>
-            <select id="freePersona" class="write-num" style="width:100%;height:46px;">
-                <option value="editor">主流情绪 (基于社会最大公约数)</option>
-                <option value="conservative">保守派 (强调稳定与传统价值)</option>
-                <option value="radical">激进派 (强调变革与社会公平)</option>
-                <option value="scholar">中立学者 (理性冷静、多维建模)</option>
-            </select>
-        </div>
-        <div class="free-write-full">
-            <label class="field-label">核心论点 / 写作方向</label>
-            <textarea class="free-textarea" id="freeAngle" rows="3" placeholder="描述你的核心观点、观察到的矛盾点或想表达的立场..."></textarea>
-        </div>
-        <div class="free-write-full" style="text-align:right">
-            <button class="btn-fetch" style="padding:12px 40px" onclick="submitFreeWrite()">▶ 开始深度创作</button>
-        </div>
-    </div>
-</div>
-
-<div id="writeDialog" style="display:none;position:fixed;inset:0;background:rgba(26,18,8,0.8);z-index:200;align-items:center;justify-content:center;">
-  <div style="background:var(--paper);width:100%;max-width:550px;border:2px solid var(--ink);padding:30px;box-shadow: 0 30px 60px rgba(0,0,0,0.5);">
-    <div id="dialogTitle" style="font-weight:700;font-size:1.2rem;margin-bottom:20px;line-height:1.4"></div>
-    <div style="font-family:monospace;font-size:0.65rem;color:var(--muted);margin-bottom:8px">选择写作角度</div>
-    <div id="dialogAngles" style="margin-bottom:20px;max-height:200px;overflow-y:auto;background:var(--cream);padding:15px;border:1px solid var(--border)"></div>
-    
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:20px;">
-        <div>
-            <label class="field-label">文章类型</label>
-            <select id="diagStyle" class="write-num" style="width:100%">
-                <option value="pipeline">社会评论 (六段式)</option>
-                <option value="oped">深度 Op-Ed</option>
                 <option value="general">通用评论</option>
             </select>
         </div>
         <div>
             <label class="field-label">写作立场</label>
-            <select id="diagPersona" class="write-num" style="width:100%">
+            <select id="freePersona" class="write-num" style="width:100%;height:46px;">
                 <option value="editor">主流情绪</option>
+                <option value="scholar">中立学者</option>
                 <option value="conservative">保守派</option>
                 <option value="radical">激进派</option>
-                <option value="scholar">中立学者</option>
             </select>
         </div>
+        <div class="free-write-full">
+            <label class="field-label">核心论点</label>
+            <textarea id="freeAngle" class="free-textarea" rows="3" placeholder="描述你的切入角度或核心论点..."></textarea>
+        </div>
     </div>
-    
-    <div style="text-align:right;gap:10px;display:flex;justify-content:flex-end">
-        <button onclick="closeWriteDialog()" style="background:transparent;padding:10px 20px;border:1px solid var(--border);cursor:pointer;font-family:monospace">CANCEL</button>
-        <button onclick="submitFromDialog()" style="background:var(--ink);color:var(--paper);padding:10px 30px;border:none;cursor:pointer;font-weight:700">START WRITING</button>
+    <div style="text-align:right; margin-top:20px;">
+        <button class="btn-fetch" onclick="submitFreeWrite()">▶ 开始写稿</button>
     </div>
-  </div>
 </div>
 
 <div class="draft-overlay" id="draftOverlay">
   <div class="draft-box">
     <div class="draft-header">
-      <div id="draftTitle" style="font-weight:700;font-family:'Playfair Display'">正在处理...</div>
+      <div id="draftTitle" style="font-weight:700">正在生成...</div>
       <button onclick="closeDraft()" style="cursor:pointer;padding:4px 12px;background:transparent;border:1px solid var(--ink)">✕</button>
     </div>
     <div class="draft-body" id="draftBody"></div>
     <div class="factcheck-report" id="factcheckReport">
-        <div style="font-family:monospace;font-size:0.6rem;color:var(--muted);margin-bottom:10px;text-transform:uppercase">Fact-Check Report</div>
+        <div style="font-family:monospace;font-size:0.6rem;color:var(--muted);margin-bottom:10px;">FACT-CHECK REPORT (WITH SOURCES)</div>
         <div id="factcheckItems"></div>
     </div>
     <div style="padding:15px 25px;text-align:right;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--cream)">
@@ -283,14 +237,8 @@
 </div>
 
 <script>
-// ── 核心逻辑 ──────────────────────────────────────────────────
-
 function getProvider() { return localStorage.getItem('ai_provider') || 'claude'; }
-
-function saveKey(v) {
-    const p = getProvider();
-    localStorage.setItem(p + '_key', v);
-}
+function saveKey(v) { localStorage.setItem(getProvider() + '_key', v); }
 
 function switchProvider(p) {
     localStorage.setItem('ai_provider', p);
@@ -299,10 +247,9 @@ function switchProvider(p) {
     document.getElementById('claudeKey').value = localStorage.getItem(p + '_key') || '';
 }
 
-// 核心调用函数，修复 Gemini 路径问题
 async function callClaude(apiKey, prompt, maxTokens) {
     const provider = getProvider();
-    let model = 'claude-3-5-sonnet-20240620';
+    let model = 'claude-3-5-sonnet-latest'; 
     if (provider === 'deepseek') model = 'deepseek-chat';
     if (provider === 'gemini') model = 'gemini-1.5-flash-latest';
 
@@ -312,252 +259,109 @@ async function callClaude(apiKey, prompt, maxTokens) {
         body: JSON.stringify({ apiKey, provider, payload: { model, max_tokens: maxTokens || 4000, messages: [{ role: 'user', content: prompt }] } })
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error?.message || data.error || '请求失败');
+    if (!res.ok) throw new Error(data.error?.message || '请求失败');
     return data.content?.[0]?.text || '';
 }
 
-// ── 数据抓取与展示 ──────────────────────────────────────────
-const SOURCES = [
-  { key: 'toutiao', name: '今日头条' }, { key: 'thepaper', name: '澎湃新闻' },
-  { key: 'sina-news', name: '新浪新闻' }, { key: 'netease-news', name: '网易新闻' },
-  { key: 'huxiu', name: '虎嗅' }, { key: '36kr', name: '36氪' }
-];
-
-async function fetchHotList() {
-    const all = [];
-    for (const s of SOURCES) {
-        try {
-            const res = await fetch(`https://daily-hot-api-vercel-mu.vercel.app/${s.key}`);
-            const json = await res.json();
-            const items = (json.data || []).slice(0, 15).map(item => ({ 
-                ...item, _sourceName: s.name, id: s.key + '_' + item.title,
-                url: item.url || item.link || '#'
-            }));
-            all.push(...items);
-        } catch(e) { console.warn(s.name, e); }
-    }
-    return all;
-}
-
-function renderRawList(items) {
-    const el = document.getElementById('rawList');
-    const groups = {};
-    items.forEach(it => { if(!groups[it._sourceName]) groups[it._sourceName]=[]; groups[it._sourceName].push(it); });
-    
-    let html = '';
-    Object.entries(groups).forEach(([name, list]) => {
-        html += `<div class="raw-platform-header">${name} · ${list.length}条</div>`;
-        list.slice(0,10).forEach((it, i) => {
-            html += `<div class="raw-item"><span class="raw-rank">${i+1}</span><a href="${it.url}" target="_blank" class="raw-title">${it.title}</a></div>`;
-        });
-    });
-    el.innerHTML = html;
-    document.getElementById('statTotal').textContent = items.length;
-}
+const SOURCES = [ {key:'toutiao',name:'今日头条'}, {key:'thepaper',name:'澎湃新闻'}, {key:'huxiu',name:'虎嗅'}, {key:'36kr',name:'36氪'}, {key:'sina-news',name:'新浪新闻'}, {key:'netease-news',name:'网易新闻'} ];
 
 async function startAnalysis() {
     const key = localStorage.getItem(getProvider() + '_key');
-    if (!key) return alert('请先在顶部填入 API Key');
-    
-    document.getElementById('statusBar').textContent = '正在聚合全网热榜并筛选 (20条)...';
-    document.getElementById('resultList').innerHTML = '<div style="padding:100px 0;text-align:center;color:var(--gold);font-family:monospace">ANALYZING TRENDS...</div>';
-
-    try {
-        const items = await fetchHotList();
-        renderRawList(items);
-        const titles = items.map((it, i) => `${i+1}. [${it._sourceName}] ${it.title}`).join('\n');
-        
-        const prompt = `你是一位具备极高新闻敏锐度的总编。请从以下全网热榜中筛选出 20 个最适合写深度评论的话题。
-        
-【重要准则】：
-1. 降低国际政治、娱乐八卦的权重。
-2. 优先选取：社会矛盾、财经趋势、商业变动、科技伦理。
-3. 必须筛选出 20 个话题。
-
-只返回JSON格式: {"selected": [{"index": 序号, "category": "分类", "angles": ["深度视角1", "深度视角2"]}]}
-
-热榜列表：
-${titles}`;
-
-        const text = await callClaude(key, prompt, 4000);
-        const analysis = JSON.parse(text.replace(/```json|```/g, '').trim());
-        renderResults(items, analysis.selected);
-        document.getElementById('statusBar').textContent = '分析完成';
-        document.getElementById('resultCount').textContent = analysis.selected.length + ' SELECTIONS';
-    } catch(e) { 
-        document.getElementById('statusBar').textContent = '错误: ' + e.message;
-        document.getElementById('resultList').innerHTML = `<div style="padding:100px 0;text-align:center;color:var(--accent)">分析失败: ${e.message}</div>`;
-    }
-}
-
-function renderResults(items, selected) {
-    const el = document.getElementById('resultList');
-    window._topicData = {};
-    el.innerHTML = selected.map((s, i) => {
-        const item = items[s.index-1];
-        if (!item) return '';
-        window._topicData[i] = { title: item.title, angles: s.angles, url: item.url };
-        return `<div class="topic-card">
-            <div class="card-rank">${String(i+1).padStart(2,'0')}</div>
-            <div class="card-body">
-                <div class="card-title"><a href="${item.url}" target="_blank">${item.title}</a></div>
-                <div class="card-angles">
-                    ${s.angles.map((a, j) => `<div class="angle-item"><span class="angle-num">视角${j+1}</span><span class="angle-text">${a}</span></div>`).join('')}
-                </div>
-                <button class="cat-btn" onclick="openWriteDialog(${i})" style="margin-top:15px;border-color:var(--gold);color:var(--gold)">✍ 写这篇</button>
-            </div>
-        </div>`;
-    }).join('');
-}
-
-// ── 写稿交互逻辑 ──────────────────────────────────────────
-
-function openWriteDialog(idx) {
-    const data = window._topicData[idx];
-    window._currentIdx = idx;
-    document.getElementById('dialogTitle').textContent = data.title;
-    document.getElementById('dialogAngles').innerHTML = data.angles.map((a, i) => 
-        `<label style="display:block;margin-bottom:10px;cursor:pointer;font-size:0.9rem"><input type="radio" name="angle" value="${i}" ${i===0?'checked':''}> ${a}</label>`
-    ).join('');
-    document.getElementById('writeDialog').style.display = 'flex';
-}
-
-function closeWriteDialog() { document.getElementById('writeDialog').style.display = 'none'; }
-
-async function submitFromDialog() {
-    const data = window._topicData[window._currentIdx];
-    const angleIdx = document.querySelector('input[name="angle"]:checked').value;
-    const angle = data.angles[angleIdx];
-    const style = document.getElementById('diagStyle').value;
-    const persona = document.getElementById('diagPersona').value;
-    closeWriteDialog();
-    executeWritingWorkflow({ title: data.title, angle, style, persona });
-}
-
-function submitFreeWrite() {
-    const title = document.getElementById('freeTitle').value.trim();
-    const angle = document.getElementById('freeAngle').value.trim();
-    const style = document.getElementById('freeStyle').value;
-    const persona = document.getElementById('freePersona').value;
-    if (!title || !angle) return alert('请填写选题和核心论点');
-    executeWritingWorkflow({ title, angle, style, persona });
-}
-
-// ── 核心工作流：研究 + 写稿 ───────────────────────────────
-
-async function executeWritingWorkflow({ title, angle, style, persona }) {
-    const key = localStorage.getItem(getProvider() + '_key');
     if (!key) return alert('请填入 Key');
+    document.getElementById('statusBar').textContent = '挖掘中...';
+    try {
+        const results = await Promise.all(SOURCES.map(s => fetch(`https://daily-hot-api-vercel-mu.vercel.app/${s.key}`).then(r => r.json()).catch(()=>({data:[]}))));
+        const allItems = results.flatMap((r, i) => (r.data || []).map(item => ({...item, _sourceName: SOURCES[i].name})));
+        
+        const groups = {};
+        allItems.forEach(it => { if(!groups[it._sourceName]) groups[it._sourceName]=[]; groups[it._sourceName].push(it); });
+        document.getElementById('rawList').innerHTML = Object.entries(groups).map(([name, list]) => `<div class="raw-platform-header">${name}</div>` + list.slice(0,8).map((it, i) => `<div class="raw-item"><span>${i+1}</span><a href="${it.url}" target="_blank" style="color:inherit; text-decoration:none; margin-left:10px">${it.title}</a></div>`).join('')).join('');
+        
+        const titles = allItems.map((it, i) => `${i+1}. [${it._sourceName}] ${it.title}`).join('\n');
+        const prompt = `筛选20个值得深度评论的话题。返回JSON: {"selected": [{"index":序号, "angles":["视角1", "视角2"]}]}`;
+        const text = await callClaude(key, prompt + "\n" + titles, 4000);
+        const analysis = JSON.parse(text.replace(/```json|```/g, '').trim());
+        
+        document.getElementById('resultList').innerHTML = analysis.selected.map((s, i) => {
+            const item = allItems[s.index-1];
+            if(!item) return '';
+            window._topicData = window._topicData || {}; window._topicData[i] = { title: item.title, angles: s.angles };
+            return `<div class="topic-card"><div class="card-rank">${i+1}</div><div class="card-body"><div class="card-title"><a href="${item.url}" target="_blank">${item.title}</a></div><div class="card-angles">${s.angles.map(a => `<div class="angle-item"><span class="angle-num">视角</span>${a}</div>`).join('')}</div><button onclick="openWriteDialog(${i})" style="margin-top:10px; cursor:pointer">✍ 写这篇</button></div></div>`;
+        }).join('');
+        document.getElementById('statusBar').textContent = '就绪';
+    } catch(e) { alert(e.message); }
+}
 
+async function executeWorkflow(title, angle, style, persona) {
     const overlay = document.getElementById('draftOverlay');
     overlay.classList.add('open');
-    document.getElementById('draftTitle').textContent = title;
-    document.getElementById('draftBody').innerHTML = '<div style="padding:40px;text-align:center;font-family:monospace;color:var(--gold)">PHASE 1: 正在检索行业背景、经济逻辑与社会事实...</div>';
-    document.getElementById('btnFactcheck').disabled = true;
-    document.getElementById('factcheckReport').style.display = 'none';
-
+    const body = document.getElementById('draftBody');
+    body.innerHTML = '<div style="text-align:center; padding:50px; font-family:monospace;">PHASE 1: 正在检索行业事实与经济逻辑...</div>';
+    
     try {
-        // Step 1: 深度研究
-        const researchPrompt = `你是一位资深研究员。请针对选题【${title}】和视角【${angle}】，提供核心背景素材：
-        1. 核心新闻事实及数据。
-        2. 涉及的行业逻辑、经济学原理（如：沉没成本、寻租空间、马太效应等）。
-        3. 相关的社会心理或法律环境。
-        要求：只给干货事实和专业术语，严禁抒情。控制在400字以内。`;
+        const key = localStorage.getItem(getProvider() + '_key');
+        const research = await callClaude(key, `针对选题【${title}】和视角【${angle}】，提供核心事实和行业逻辑素材。`, 1200);
+        body.innerHTML = '<div style="text-align:center; padding:50px; font-family:monospace; color:var(--green)">PHASE 2: 正在构建硬核逻辑稿件...</div>';
         
-        const researchData = await callClaude(key, researchPrompt, 1500);
+        let prompt = `你是【${persona}】。基于以下资料写一篇1200字深度评论：${research}。选题：${title}。角度：${angle}。要求：消除套话，硬核逻辑驱动。`;
+        if(style === 'oped') prompt = `写一篇深度 Op-Ed。资料：${research}。选题：${title}。视角：${angle}。`;
+
+        const rawArticle = await callClaude(key, prompt, 4000);
+        // 核心修改1：去掉文字里的 markdown 符号 **
+        const cleanedArticle = rawArticle.replace(/\*\*/g, '');
         
-        document.getElementById('draftBody').innerHTML = '<div style="padding:40px;text-align:center;font-family:monospace;color:var(--green)">PHASE 2: 事实已对齐，正在进行深度逻辑创作...</div>';
-
-        // Step 2: 正式写稿
-        const personas = {
-            editor: "主流情绪：基于大众最大公约数进行分析，客观但有鲜明立场。",
-            conservative: "保守派：强调社会稳定、传统价值和制度逻辑。",
-            radical: "激进派：直面利益结构，强调社会分配、公平与结构性改革。",
-            scholar: "中立学者：极度理性，侧重多维建模、数据分析和历史背景对比。"
-        };
-
-        let prompt = `你是【${personas[persona]}】。请结合以下【深度素材】完成创作。
-【选题】${title}
-【视角】${angle}
-【深度素材】${researchData}
-
-【强制标准】
-1. 严禁使用“随着...”、“我们要...”等学生气套话。
-2. 凡提到“很多”“很好”处，必须替换为精准术语或逻辑描述。
-3. 总体语调：硬核逻辑驱动，字数1200字左右。`;
-
-        if (style === 'pipeline') {
-            prompt += `\n【结构要求：硬核六段式】
-1. 【第一段：破题】特写镜头切入矛盾核心。
-2. 【第二段：逻辑拆解】深挖冰山底座，使用素材中的经济/行业逻辑，通过“看似...实则...”结构展示深度。
-3. 【第三段：利益关联】告诉读者，这件事如何影响他们的生活账本或职业护城河。
-4. 【第四段：态度定调】给出一剑封喉的判断，使用强反差金句。
-5. 【第五段：溯源追问】对标历史周期或国际案例。
-6. 【第六段：升华结尾】干脆利落的智识共鸣。`;
-        } else if (style === 'oped') {
-            prompt = `你是一位顶级媒体Op-Ed专栏作家。请基于以下素材，写一篇极具洞察力的Op-Ed。
-【素材】${researchData}
-【核心指令】
-1. **反共识**：挖掘被大众忽略的新闻细节或者深层因果。
-2. **智识压制**：使用硬核术语（如寻租理论、帕累托改进、市场与政府介入的边界、网络传播理论等等）解释现象。
-3. **流体思维**：不分段标注，根据论点自然展开。
-【选题】${title} | 【视角】${angle}`;
-        }
-
-        const article = await callClaude(key, prompt, 4000);
-        document.getElementById('draftBody').textContent = article;
-        document.getElementById('wordCountDisplay').textContent = article.length + ' CHARACTERS';
+        body.textContent = cleanedArticle;
+        document.getElementById('wordCountDisplay').textContent = cleanedArticle.length + ' CHARS';
         document.getElementById('btnFactcheck').disabled = false;
-
-    } catch(e) { 
-        document.getElementById('draftBody').innerHTML = `<div style="color:var(--accent)">生成失败: ${e.message}</div>`;
-    }
+    } catch(e) { body.innerHTML = `生成失败: ${e.message}`; }
 }
 
 async function startFactcheck() {
-    const key = localStorage.getItem(getProvider() + '_key');
-    const text = document.getElementById('draftBody').textContent;
     const itemsEl = document.getElementById('factcheckItems');
     document.getElementById('factcheckReport').style.display = 'block';
-    itemsEl.innerHTML = '<div style="font-family:monospace;font-size:0.7rem;color:var(--gold)">正在执行实时事实一致性核查...</div>';
-    
+    itemsEl.textContent = '正在检索全网信源并核查事实一致性...';
     try {
-        const prompt = `核查以下评论文章的事实真实性。
+        const key = localStorage.getItem(getProvider() + '_key');
+        // 核心修改2：要求给出标题和链接
+        const prompt = `请核查以下评论文章的事实真实性。
+        对于每一个核查点，必须提供可搜索到的权威新闻标题和参考链接。
         返回格式（每行一个）：
-        ERROR|原文表述|正确事实|原因
-        OK|已核实的事实
-        文章内容：\n${text}`;
+        ERROR|原文表述|正确事实|原因|参考标题|参考链接
+        OK|已核实事实|参考标题|参考链接
+        内容：${document.getElementById('draftBody').textContent}`;
         
-        const report = await callClaude(key, prompt, 2000);
-        const lines = report.split('\n').filter(l => l.trim());
+        const report = await callClaude(key, prompt, 2500);
+        const lines = report.split('\n').filter(l=>l.trim());
         
         itemsEl.innerHTML = lines.map(line => {
-            if (line.startsWith('ERROR|')) {
-                const p = line.split('|');
-                return `<div class="fact-item"><div class="fact-original">✗ ${p[1]}</div><div class="fact-corrected">✓ ${p[2]}</div></div>`;
+            const p = line.split('|');
+            if(line.startsWith('ERROR|') && p.length >= 6) {
+                return `<div class="fact-item">
+                    <div class="fact-original">✗ ${p[1]}</div>
+                    <div class="fact-corrected">✓ ${p[2]}</div>
+                    <a class="fact-link" href="${p[5]}" target="_blank">来源：${p[4]}</a>
+                </div>`;
+            } else if(line.startsWith('OK|') && p.length >= 4) {
+                return `<div class="fact-ok">
+                    ✓ ${p[1]}
+                    <a class="fact-link" href="${p[3]}" target="_blank">核实源：${p[2]}</a>
+                </div>`;
             }
-            return `<div class="fact-ok">✓ ${line.replace('OK|','')}</div>`;
+            return '';
         }).join('');
-    } catch(e) { itemsEl.textContent = '核查服务暂时不可用'; }
+    } catch(e) { itemsEl.textContent = '核查异常'; }
+}
+
+function submitFreeWrite() {
+    const title = document.getElementById('freeTitle').value;
+    const angle = document.getElementById('freeAngle').value;
+    if(!title || !angle) return alert('请补全选题信息');
+    executeWorkflow(title, angle, document.getElementById('freeStyle').value, document.getElementById('freePersona').value);
 }
 
 function closeDraft() { document.getElementById('draftOverlay').classList.remove('open'); }
-function copyDraft() { navigator.clipboard.writeText(document.getElementById('draftBody').textContent); alert('内容已复制到剪贴板'); }
-
-window.onload = () => {
-    switchProvider(getProvider());
-    setInterval(() => {
-        const now = new Date();
-        document.getElementById('clockDisplay').textContent = now.toLocaleTimeString('zh-CN', {hour12:false});
-    }, 1000);
-};
-
-// 简单的分类过滤逻辑
-function filterCat(cat, btn) {
-    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    // 此处可扩展真实的分类过滤逻辑
-}
+function copyDraft() { navigator.clipboard.writeText(document.getElementById('draftBody').textContent); alert('已复制干净的纯文本'); }
+window.onload = () => switchProvider(getProvider());
 </script>
 </body>
 </html>
