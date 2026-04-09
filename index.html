@@ -35,8 +35,6 @@
   .card-angles { display:flex; flex-direction:column; gap:5px; margin-top:8px;}
   .angle-item { display:flex; align-items:flex-start; gap:8px; font-size:0.85rem; line-height:1.6; color:var(--ink); margin-top:5px; }
   .angle-num { font-family:'JetBrains Mono', monospace; font-size:0.6rem; color:var(--paper); background: var(--muted); padding:1px 5px; margin-top:3px; flex-shrink:0; }
-  
-  /* 右侧热榜样式优化，加入 hover 按钮 */
   .raw-platform-header { font-family:'JetBrains Mono', monospace; font-size:0.6rem; font-weight:600; color:var(--paper); background:var(--ink); padding:3px 8px; margin:15px 0 5px; }
   .raw-item { display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:1px solid rgba(0,0,0,0.05); font-size:0.75rem; }
   .raw-rank { font-family:'JetBrains Mono', monospace; font-size:0.62rem; color:var(--border); width:18px; flex-shrink:0; }
@@ -44,7 +42,6 @@
   .raw-title:hover { color:var(--accent); text-decoration:underline; }
   .raw-write-btn { opacity:0; pointer-events:none; background:var(--gold); color:var(--paper); border:none; padding:3px 8px; font-size:0.6rem; cursor:pointer; flex-shrink:0; border-radius:2px; font-weight:600; transition: opacity 0.2s; }
   .raw-item:hover .raw-write-btn { opacity:1; pointer-events:auto; }
-
   .free-write-section { border-top:3px double var(--ink); padding:40px 36px; background:var(--cream); position:relative; z-index:1; }
   .free-write-grid { display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-top:16px; }
   .free-write-full { grid-column:1/-1; }
@@ -58,7 +55,7 @@
   .fact-item { margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid rgba(0,0,0,0.1); }
   .fact-original { color:var(--accent); text-decoration:line-through; margin-bottom:6px; font-size:0.85rem;}
   .fact-corrected { color:var(--green); font-weight:600; margin-bottom:6px; font-size:0.85rem;}
-  .fact-link { color:var(--blue); text-decoration:none; font-size:0.8rem; display:inline-block; margin-top:2px; background: rgba(26,58,122,0.05); padding:2px 6px; border-radius:3px; }
+  .fact-link { color:var(--blue); text-decoration:none; font-size:0.8rem; display:inline-block; margin-top:2px; background: rgba(26,58,122,0.05); padding:4px 8px; border-radius:3px; }
   .fact-link:hover { background: rgba(26,58,122,0.1); text-decoration:underline; }
   .fact-ok { color:var(--green); font-size:0.85rem; margin-bottom:8px;}
   .citation-link { color:var(--blue); text-decoration:none; font-size:0.75rem; vertical-align:super; font-family:monospace; margin:0 2px; font-weight:bold;}
@@ -141,7 +138,7 @@
         </div>
         <div class="free-write-full">
             <label class="field-label">核心观点 / 补充细节</label>
-            <textarea id="freeAngle" class="write-num" style="height:80px; font-family:serif;" placeholder="描述你的切入视角或补充新闻细节..."></textarea>
+            <textarea id="freeAngle" class="write-num" style="height:80px; font-family:serif;" placeholder="描述你的切入视角或事实细节..."></textarea>
         </div>
         <div class="free-write-full" style="text-align:right;">
             <button class="btn-fetch" onclick="submitFreeWrite()">▶ 开始深度创作</button>
@@ -204,7 +201,7 @@
         <div style="padding:15px 25px; text-align:right; background:var(--cream); border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
             <div id="wordCount" style="font-family:monospace; font-size:0.7rem; color:var(--muted)"></div>
             <div style="display:flex; gap:10px;">
-                <button id="btnFactcheck" class="cat-btn" onclick="startFactcheck()" disabled style="border-color:var(--green); color:var(--green); padding:8px 15px; font-size:0.7rem">🔍 核查事实与链接溯源</button>
+                <button id="btnFactcheck" class="cat-btn" onclick="startFactcheck()" disabled style="border-color:var(--green); color:var(--green); padding:8px 15px; font-size:0.7rem">🔍 核对原文及近期新闻</button>
                 <button class="btn-fetch" onclick="copyDraft()" style="padding:8px 20px;">复制纯文本正文</button>
             </div>
         </div>
@@ -214,8 +211,9 @@
 <script>
 window._topicData = {};
 window._pendingCorrections = [];
+window._currentSourceContent = ""; // 核心：专门保存当前文章抓取到的事实原文
 
-function updateClock() { document.getElementById('clockDisplay').textContent = new Date().toLocaleString(); }
+function updateClock() { document.getElementById('clockDisplay').textContent = new Date().toLocaleString('zh-CN', {hour12:false}); }
 setInterval(updateClock, 1000); updateClock();
 
 function getProvider() { return localStorage.getItem('ai_provider') || 'claude'; }
@@ -244,20 +242,16 @@ async function callClaude(apiKey, prompt, maxTokens) {
     return data.content?.[0]?.text || '';
 }
 
-// === 核心修复：热榜直接发送到创作中心 ===
 function fillFreeWrite(btn) {
     const title = btn.getAttribute('data-title');
     const url = btn.getAttribute('data-url');
     
-    // 填入数据
     document.getElementById('freeTitle').value = title;
     document.getElementById('freeUrl').value = url;
-    document.getElementById('freeAngle').value = ''; // 清空之前的观点
+    document.getElementById('freeAngle').value = '';
     
-    // 平滑滚动到底部创作区
     document.getElementById('freeWriteSection').scrollIntoView({ behavior: 'smooth' });
     
-    // 给输入框一个短暂的高亮提示反馈
     const titleInput = document.getElementById('freeTitle');
     const urlInput = document.getElementById('freeUrl');
     titleInput.style.backgroundColor = 'rgba(184, 134, 11, 0.2)';
@@ -281,7 +275,6 @@ async function startAnalysis() {
         const groups = {};
         allItems.forEach(it => { if(!groups[it._sourceName]) groups[it._sourceName]=[]; groups[it._sourceName].push(it); });
         
-        // 渲染右栏，加入鼠标滑过出现的“写这篇”快捷按钮
         document.getElementById('rawList').innerHTML = Object.entries(groups).map(([name, list]) => 
             `<div class="raw-platform-header">${name}</div>` + 
             list.slice(0,15).map((it, i) => `
@@ -385,20 +378,17 @@ async function executeWorkflow(title, angle, style, persona, wordcount, url, sou
     document.getElementById('btnFactcheck').disabled = true;
     document.getElementById('btnRevise').classList.remove('active');
     window._pendingCorrections = [];
+    window._currentSourceContent = ""; // 初始化
 
-    let sourceContent = "无法获取外部网页原文，请依赖模型内部知识库进行背景分析。";
-    
     if (url && url.startsWith('http')) {
         try {
             body.innerHTML = `<div style="text-align:center; padding:50px; font-family:monospace; color:var(--gold)">PHASE 1: 正在跨域读取原始新闻网页素材...<br><span style="font-size:0.7rem; color:var(--muted)">目标源: ${sourceName || '未知'}</span></div>`;
             const jinaRes = await fetch('https://r.jina.ai/' + url);
             if (jinaRes.ok) {
                 const rawText = await jinaRes.text();
-                sourceContent = rawText.substring(0, 4000); 
+                window._currentSourceContent = rawText.substring(0, 5000); // 保存下来供后续核查比对
             }
-        } catch(e) {
-            console.warn("Jina 抓取失败", e);
-        }
+        } catch(e) { console.warn("Jina 抓取失败", e); }
     } else {
         body.innerHTML = '<div style="text-align:center; padding:50px; font-family:monospace; color:var(--gold)">PHASE 1: 未提供链接，正在基于内部知识库检索事实...</div>';
     }
@@ -412,7 +402,7 @@ async function executeWorkflow(title, angle, style, persona, wordcount, url, sou
         } else {
             researchPrompt += `\n注意：请重点提取文章中的 5W1H 事实清单、场景还原和核心数据。`;
         }
-        researchPrompt += `\n【原始参考素材】：\n${sourceContent}\n\n严禁主观评价，只列客观事实，字数500字内。`;
+        researchPrompt += `\n【原始参考素材】：\n${window._currentSourceContent || '无外部素材，请依赖内部数据库'}\n\n严禁主观评价，只列客观事实，字数500字内。`;
         
         const research = await callClaude(key, researchPrompt, 1500);
         body.innerHTML = '<div style="text-align:center; padding:50px; font-family:monospace; color:var(--green)">PHASE 2: 网页事实已结构化完毕，正在进行深度排版创作...</div>';
@@ -432,7 +422,7 @@ async function executeWorkflow(title, angle, style, persona, wordcount, url, sou
 2. 严禁使用 Markdown 加粗符号（**）。禁止使用“让人痛心”、“我们要...”等公文套话。`;
 
         if(style === 'fact_first') {
-            prompt += "\n模式：新闻实录。请将 70% 的篇幅用于复述素材中的事实细节，分析应点到为止或放在文末。";
+            prompt += "\n模式：新闻实录。请将 60% 的篇幅用于复述素材中的事实细节，分析评论需要一针见血，不多说废话。";
         } else if(style === 'pipeline') {
             prompt += "\n结构：特写破题、逻辑拆解、利益关联、金句定调、溯源追问、升华结尾。";
         } else if(style === 'oped') {
@@ -454,27 +444,33 @@ async function startFactcheck() {
     document.getElementById('btnRevise').classList.remove('active');
     window._pendingCorrections = []; 
     
-    itemsEl.innerHTML = '<div style="font-family:monospace; color:var(--gold)">正在提取事实，并生成可靠的新闻搜索锚点...</div>';
+    itemsEl.innerHTML = '<div style="font-family:monospace; color:var(--gold)">正在提取事实，基于原文素材与百度新闻检索进行双重比对...</div>';
     
     try {
         const key = localStorage.getItem(getProvider() + '_key');
+        const now = new Date();
+        const timeStr = now.getFullYear() + "年" + (now.getMonth() + 1) + "月";
         
-        const prompt = `你是一个极度严苛的事实核查机器。请核查以下评论文章的事实真实性。
-【关键指令】：不要试图生成任何新闻的URL链接！因为你无法联网验证，会导致死链。
-【操作方式】：请提取可以用于搜索引擎验证的“极简搜索词”。
-“极简搜索词”必须且仅能包含2-3个核心名词（例如：“网暴 检察日报”或“统计局 失业率”）。绝对不能包含具体的长标题、日期或标点符号！
+        const sourceContext = window._currentSourceContent ? `【原始新闻参考素材（请作为事实核对的首要基准）】：\n${window._currentSourceContent}\n\n` : '';
+
+        const prompt = `你是一个极度严苛的事实核查机器。请基于我提供的【原始新闻参考素材】（如果有的话），核对以下评论文章中的硬性事实（如数据、时间线、人物事件）。
+【时间限制】：所有外部事实都应处于“最近两周”的新闻语境（目前是 ${timeStr}）。
+
+【操作方式】：如果与【原始新闻参考素材】冲突，请直接指出错误。如果原文未提及，但你认为需要验证，请提取用于验证的“极简新闻搜索词”。
+“极简搜索词”仅限2-3个核心名词（如：“网暴 检察日报”）。绝对不能包含URL链接。
 
 严格按以下格式输出（使用|分割）：
-ERROR|原文错误表述|正确的事实描述|发现错误的原因|极简搜索词
-OK|已核实的事实描述|极简搜索词
+ERROR|草稿中的错误表述|正确的事实应该是什么|发现错误的原因|极简搜索词
+OK|草稿中的正确表述|极简搜索词
 
-文章内容：\n${document.getElementById('draftBody').innerText}`;
+${sourceContext}
+评论文章草稿内容：\n${document.getElementById('draftBody').innerText}`;
         
         const report = await callClaude(key, prompt, 3000);
         const lines = report.split('\n').filter(l => l.trim() && (l.startsWith('ERROR|') || l.startsWith('OK|')));
         
         if (lines.length === 0) {
-            itemsEl.innerHTML = `<div style="color:var(--muted)">未按规范格式返回数据，原始内容：<br>${report}</div>`;
+            itemsEl.innerHTML = `<div style="color:var(--muted)">模型未按规范返回数据，原始内容：<br>${report}</div>`;
             return;
         }
 
@@ -483,22 +479,23 @@ OK|已核实的事实描述|极简搜索词
             const p = line.split('|');
             if(line.startsWith('ERROR|')) {
                 const searchKeyword = p[4] || p[1];
-                const realSearchLink = `https://www.baidu.com/s?wd=${encodeURIComponent(searchKeyword)}`;
+                // 核心修改：使用百度资讯新闻搜索，并加上按时间排序的参数
+                const realSearchLink = `https://news.baidu.com/ns?word=${encodeURIComponent(searchKeyword + ' ' + timeStr)}&clk=sortbytime`;
                 
                 window._pendingCorrections.push({ original: p[1], corrected: p[2], sourceLink: realSearchLink, id: index });
                 
                 html += `<div class="fact-item">
                     <div class="fact-original">✗ 错误：${p[1]}</div>
-                    <div class="fact-corrected">✓ 应为：${p[2]}</div>
-                    <a class="fact-link" href="${realSearchLink}" target="_blank">🔍 前往百度搜索核实：${searchKeyword}</a>
+                    <div class="fact-corrected">✓ 修正建议：${p[2]}</div>
+                    <a class="fact-link" href="${realSearchLink}" target="_blank">📰 点击通过百度新闻(按时间排序)核实：${searchKeyword}</a>
                 </div>`;
             } else if (line.startsWith('OK|')) {
                 const searchKeyword = p[2] || p[1];
-                const realSearchLink = `https://www.baidu.com/s?wd=${encodeURIComponent(searchKeyword)}`;
+                const realSearchLink = `https://news.baidu.com/ns?word=${encodeURIComponent(searchKeyword + ' ' + timeStr)}&clk=sortbytime`;
                 
                 html += `<div class="fact-ok">
-                    ✓ 核实：${p[1]}
-                    <br><a class="fact-link" href="${realSearchLink}" target="_blank" style="margin-top:5px; margin-bottom:10px">🔍 前往百度搜索验证：${searchKeyword}</a>
+                    ✓ 核实一致：${p[1]}
+                    <br><a class="fact-link" href="${realSearchLink}" target="_blank" style="margin-top:5px; margin-bottom:10px">📰 点击通过百度新闻(按时间排序)溯源：${searchKeyword}</a>
                 </div>`;
             }
         });
@@ -520,7 +517,7 @@ async function applyRevisions() {
     const originalText = document.getElementById('draftBody').innerText;
     
     const correctionRules = window._pendingCorrections.map((c, i) => 
-        `规则 ${i+1}: 将错误描述 "${c.original}" 替换为 "${c.corrected}"，并在其后紧贴插入HTML角标：<a class="citation-link" href="${c.sourceLink}" target="_blank" title="点击搜索验证">[${i+1}]</a>`
+        `规则 ${i+1}: 将错误描述 "${c.original}" 替换为 "${c.corrected}"，并在其后紧贴插入HTML角标：<a class="citation-link" href="${c.sourceLink}" target="_blank" title="点击跳转外部新闻检索">[${i+1}]</a>`
     ).join('\n');
 
     const prompt = `你是排版编辑。根据规则修改原文。只输出修改后的全文（包含插入的HTML角标），绝对不要使用**加粗，保留换行。
