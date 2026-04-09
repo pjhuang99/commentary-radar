@@ -33,6 +33,7 @@
   .section-label { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; color: var(--muted); }
   .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
+  /* 还原热榜列表样式 */
   .topic-item { padding: 15px 0; border-bottom: 1px solid var(--border); cursor: pointer; transition: all 0.2s; position: relative; }
   .topic-item:hover { transform: translateX(5px); }
   .topic-rank { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.2rem; color: var(--gold); position: absolute; left: -25px; top: 12px; }
@@ -40,7 +41,7 @@
   .topic-meta { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--muted); display: flex; gap: 10px; }
 
   .input-group { margin-bottom: 25px; }
-  select, textarea, input[type="text"] { width: 100%; background: var(--cream); border: 1px solid var(--border); padding: 10px; font-family: inherit; font-size: 0.9rem; outline: none; }
+  select, textarea, input[type="text"] { width: 100%; background: var(--cream); border: 1px solid var(--border); padding: 10px; font-family: inherit; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
   .btn-fetch { background: var(--ink); color: var(--paper); border: none; padding: 15px; width: 100%; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 0.9rem; }
   .btn-fetch:hover { background: var(--accent); }
   .cat-btn { background: none; border: 1px solid var(--border); padding: 6px 12px; font-size: 0.75rem; font-weight: 600; cursor: pointer; }
@@ -202,47 +203,58 @@ function switchProvider(p) {
     document.getElementById('keyLabel').textContent = p.toUpperCase() + ' KEY';
 }
 
+// --- 完整还原热榜抓取逻辑 ---
 async function fetchHotTopics() {
+    const list = document.getElementById('topicList');
+    updateStatus('正在获取实时热榜...');
     try {
         const res = await fetch('https://api.vvhan.com/api/hotlist/zhihu');
         const data = await res.json();
         currentTopics = data.data.slice(0, 20);
-        document.getElementById('topicList').innerHTML = currentTopics.map((t, i) => `
+        list.innerHTML = currentTopics.map((t, i) => `
             <div class="topic-item" onclick="selectTopic(${i})">
                 <span class="topic-rank">${(i+1).toString().padStart(2, '0')}</span>
                 <div class="topic-title">${t.title}</div>
-                <div class="topic-meta"><span>ZHIHU HOT</span></div>
+                <div class="topic-meta"><span>ZHIHU HOT</span> | <span>HOTNESS: ${t.hot}</span></div>
             </div>`).join('');
-    } catch (e) {}
+        updateStatus('线索抓取完成');
+    } catch (e) {
+        list.innerHTML = '<div style="color:var(--accent); font-size:0.7rem;">获取热榜失败</div>';
+    }
 }
 
 function selectTopic(index) {
-    document.getElementById('freeTitle').value = currentTopics[index].title;
-    document.getElementById('freeUrl').value = currentTopics[index].url;
+    const topic = currentTopics[index];
+    document.getElementById('freeTitle').value = topic.title;
+    document.getElementById('freeUrl').value = topic.url;
+    updateStatus('已选择: ' + topic.title);
 }
 
 async function runFreeWorkflow() {
     const title = document.getElementById('freeTitle').value;
     const url = document.getElementById('freeUrl').value;
+    const style = document.getElementById('writingStyle').value;
+    const persona = document.getElementById('persona').value;
     if(!title) return alert('请选择话题');
     openDraft();
     document.getElementById('draftTitle').textContent = title;
     if(url) {
+        updateStatus('RAG: 正在解析网页...');
         try {
             const res = await fetch(`https://r.jina.ai/${url}`);
             window._currentSourceContent = await res.text();
             window._currentSourceUrl = url;
         } catch(e) {}
     }
-    await executeWorkflow(title, "默认", document.getElementById('writingStyle').value, document.getElementById('persona').value, 800, url);
+    await executeWorkflow(title, "默认", style, persona, 800, url);
 }
 
-// 核心提示词与生成逻辑 (无删改)
+// --- 完整还原 System Prompt 与生成逻辑 ---
 async function executeWorkflow(title, angle, style, persona, wordcount, url) {
     window._currentDraftMeta = { title, angle, style, persona, wordcount, url };
     const key = localStorage.getItem(getProvider() + '_key');
     const body = document.getElementById('draftBody');
-    body.innerHTML = '<div class="loading">正在构建逻辑架构...</div>';
+    body.innerHTML = '<div class="loading">正在构建逻辑架构并撰写深度评论...</div>';
 
     const systemPrompt = `你是一位顶级专栏作家。
 立场设定: ${persona}。
@@ -257,62 +269,76 @@ ${window._currentSourceContent ? `背景参考: ${window._currentSourceContent.s
     try {
         const result = await callClaude(key, `以《${title}》为题创作一篇深度评论。`, 4000, systemPrompt);
         body.innerHTML = result.replace(/\n/g, '<br>');
-        document.getElementById('draftMetaInfo').textContent = `[ 模式: ${style} | 立场: ${persona} ]`;
+        const styleMap = { fact_first: '新闻实录', pipeline: '六段式', oped: 'Op-Ed' };
+        const personaMap = { reporter: '冷峻记者', editor: '主流情绪', scholar: '中立学者', conservative: '保守派', radical: '激进派' };
+        document.getElementById('draftMetaInfo').textContent = `[ 模式: ${styleMap[style]||style} | 立场: ${personaMap[persona]||persona} | 实时生成自: ${getProvider().toUpperCase()} ]`;
         document.getElementById('wordCount').textContent = result.length + ' 字符';
         document.getElementById('btnFactcheck').disabled = false;
+        updateStatus('生成完成');
     } catch (e) { body.innerHTML = '生成失败: ' + e.message; }
 }
 
+// --- 完整还原事实核查逻辑 ---
 async function startFactcheck() {
     const btn = document.getElementById('btnFactcheck');
-    btn.textContent = '⚡ 核查中...';
+    btn.textContent = '⚡ 正在交叉比对事实...';
+    btn.disabled = true;
     const text = document.getElementById('draftBody').innerText;
-    const prompt = `分析文章事实，找出陈述。格式要求 JSON: [{"original": "...", "corrected": "...", "status": "ERROR/MATCH", "sourceLink": "..."}] \n内容：${text.substring(0, 2000)}`;
+    const prompt = `分析以下文章，找出其中包含的具体“事实陈述”（如时间、人物、数字、具体事件描述）。针对每个事实进行核查：1. 如果该事实与一般认知或参考内容不符，标记为 ERROR。2. 提供正确的描述。3. 无论对错，都通过百度新闻搜索生成一个最相关的参考溯源链接。输出格式必须为 JSON 数组：[{"original": "原文陈述", "corrected": "修正后陈述", "status": "ERROR/MATCH", "sourceLink": "百度新闻搜索链接"}] \n文章内容：\n${text.substring(0, 2000)}`;
+    
     try {
-        const res = await callClaude(localStorage.getItem(getProvider() + '_key'), prompt, 2000, "只输出 JSON 数组，不要回复其他。");
+        const res = await callClaude(localStorage.getItem(getProvider() + '_key'), prompt, 2000, "你是一个严谨的事实核查员。只输出 JSON，不要回复任何其他文字。");
         const results = JSON.parse(res.substring(res.indexOf('['), res.lastIndexOf(']') + 1));
         window._pendingCorrections = results.filter(r => r.status === 'ERROR');
         document.getElementById('reportList').innerHTML = results.map(r => `
             <div class="fact-item">
-                <span class="status-tag ${r.status === 'ERROR' ? 'tag-error' : 'tag-match'}">${r.status}</span>
-                ${r.status === 'ERROR' ? `<div class="fact-corrected">修正: ${r.corrected}</div>` : `<div>${r.original}</div>`}
-                <a class="source-link" href="${r.sourceLink}" target="_blank">🔗 溯源链接</a>
+                <div><span class="status-tag ${r.status === 'ERROR' ? 'tag-error' : 'tag-match'}">${r.status}</span><span style="font-size:0.8rem; font-weight:700;">${r.original.substring(0, 30)}...</span></div>
+                ${r.status === 'ERROR' ? `<div class="fact-original">原文: ${r.original}</div><div class="fact-corrected">修正: ${r.corrected}</div>` : ''}
+                <a class="source-link" href="${r.sourceLink}" target="_blank">🔗 百度新闻溯源验证 ></a>
             </div>`).join('');
         document.getElementById('factcheckReport').style.display = 'block';
         btn.textContent = '🔍 核查完成';
-    } catch(e) { alert(e.message); btn.textContent = '🔍 核查事实'; btn.disabled = false; }
+    } catch(e) { alert(e.message); btn.textContent = '🔍 核查事实与溯源'; btn.disabled = false; }
 }
 
 async function applyRevisions() {
+    const btn = document.getElementById('btnRevise');
+    btn.textContent = '⚡ 正在应用修订...';
     const key = localStorage.getItem(getProvider() + '_key');
     const originalText = document.getElementById('draftBody').innerText;
-    const rules = window._pendingCorrections.map((c, i) => `将 "${c.original}" 替换为 "${c.corrected}" 并加HTML角标 <a class="citation-link" href="${c.sourceLink}">[${i+1}]</a>`).join('\n');
+    const rules = window._pendingCorrections.map((c, i) => `规则 ${i+1}: 将错误描述 "${c.original}" 替换为 "${c.corrected}"，并在其后插入HTML角标：<a class="citation-link" href="${c.sourceLink}" target="_blank">[${i+1}]</a>`).join('\n');
     try {
-        const revised = await callClaude(key, `根据规则修改原文，输出全文带HTML标签：\n${rules}\n\n原文：\n${originalText}`, 4000);
+        const revised = await callClaude(key, `你是排版编辑。根据规则修改原文。只输出修改后的全文（包含插入的HTML角标），绝对不要使用**加粗，保留换行。\n规则：\n${rules}\n\n原文：\n${originalText}`, 4000);
         document.getElementById('draftBody').innerHTML = revised.replace(/\*\*/g, '').replace(/\n/g, '<br>');
+        btn.textContent = '✓ 修订完成';
     } catch(e) {}
 }
 
-// 草稿箱逻辑
+// --- 草稿箱功能 ---
 function getDrafts() { return JSON.parse(localStorage.getItem('radar_drafts') || '[]'); }
 function updateDraftCount() { document.getElementById('draftCount').textContent = getDrafts().length; }
 function saveCurrentDraft() {
     const body = document.getElementById('draftBody').innerHTML;
-    if(!body || body.includes('loading')) return alert('无内容');
+    if(!body || body.includes('loading')) return alert('无内容可保存');
     const drafts = getDrafts();
     drafts.unshift({ id: Date.now(), date: new Date().toLocaleString(), content: body, ...window._currentDraftMeta });
     localStorage.setItem('radar_drafts', JSON.stringify(drafts));
-    updateDraftCount(); alert('已保存');
+    updateDraftCount(); alert('已保存至草稿箱');
 }
 function openDraftBox() {
     const container = document.getElementById('draftListContainer');
     const drafts = getDrafts();
-    container.innerHTML = drafts.map(d => `
-        <div class="draft-item">
-            <div style="flex:1"><strong>${d.title}</strong><div class="draft-item-meta">${d.date} | ${d.persona}</div></div>
-            <button class="btn-icon" onclick="loadDraft(${d.id})">读取</button>
-            <button class="btn-icon btn-danger" onclick="deleteDraft(${d.id})">删</button>
-        </div>`).join('');
+    if(drafts.length === 0) { container.innerHTML = '<div style="padding:40px; text-align:center; color:var(--muted);">空</div>'; }
+    else {
+        container.innerHTML = drafts.map(d => `
+            <div class="draft-item">
+                <div style="flex:1"><strong>${d.title}</strong><div class="draft-item-meta">${d.date} | ${d.persona}</div></div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-icon" onclick="loadDraft(${d.id})">读取</button>
+                    <button class="btn-icon btn-danger" onclick="deleteDraft(${d.id})">删</button>
+                </div>
+            </div>`).join('');
+    }
     document.getElementById('draftListOverlay').classList.add('open');
 }
 function loadDraft(id) {
@@ -321,7 +347,9 @@ function loadDraft(id) {
     window._currentDraftMeta = d;
     document.getElementById('draftTitle').textContent = d.title;
     document.getElementById('draftBody').innerHTML = d.content;
-    document.getElementById('draftMetaInfo').textContent = `[ 模式: ${d.style} | 立场: ${d.persona} ]`;
+    document.getElementById('wordCount').textContent = document.getElementById('draftBody').innerText.length + ' 字符';
+    document.getElementById('factcheckReport').style.display = 'none';
+    document.getElementById('btnFactcheck').disabled = false;
     closeDraftBox(); openDraft();
 }
 function deleteDraft(id) { 
@@ -331,6 +359,7 @@ function deleteDraft(id) {
 function closeDraftBox() { document.getElementById('draftListOverlay').classList.remove('open'); }
 function openDraft() { document.getElementById('draftOverlay').classList.add('open'); }
 function closeDraft() { document.getElementById('draftOverlay').classList.remove('open'); }
+function updateStatus(msg) { document.getElementById('statusBar').textContent = msg; }
 function copyDraft() { navigator.clipboard.writeText(document.getElementById('draftBody').innerText); alert('已复制'); }
 
 async function callClaude(key, prompt, maxTokens, system = "") {
