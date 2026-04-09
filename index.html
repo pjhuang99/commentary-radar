@@ -120,10 +120,6 @@
     font-family:'Playfair Display', serif;
     font-size:1.1rem; font-weight:700; letter-spacing:0.5px;
   }
-  .section-count {
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.65rem; color:var(--muted);
-  }
 
   /* ── CARD ── */
   .card-list { display:flex; flex-direction:column; gap:0; }
@@ -135,7 +131,6 @@
     gap:12px; cursor:default;
     animation: fadeIn 0.3s ease both;
   }
-  .topic-card:last-child { border-bottom:none; }
 
   @keyframes fadeIn {
     from { opacity:0; transform:translateY(6px); }
@@ -168,17 +163,6 @@
     font-size:0.6rem; color:var(--paper);
     background: var(--muted); padding:1px 5px;
     flex-shrink:0; margin-top:3px; font-weight:600;
-  }
-  .angle-text { flex:1; }
-
-  .card-tags {
-    display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;
-  }
-  .tag {
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.58rem; padding:2px 7px;
-    background:var(--cream); border:1px solid var(--border);
-    color:var(--muted); letter-spacing:0.3px;
   }
 
   /* ── SIDEBAR ── */
@@ -214,7 +198,6 @@
   .btn-copy:hover { background:var(--ink); color:var(--paper); }
   .btn-factcheck { font-family:'JetBrains Mono', monospace; font-size:0.65rem; font-weight:600; letter-spacing:0.5px; padding:5px 14px; cursor:pointer; border:1px solid var(--green); color:var(--green); background:transparent; transition: all 0.15s; }
   .btn-factcheck:hover { background:var(--green); color:var(--paper); }
-  .btn-factcheck:disabled { border-color:var(--border); color:var(--border); cursor:not-allowed; }
   .factcheck-report { padding:12px 20px; border-top:1px solid var(--border); background:var(--cream); font-size:0.78rem; line-height:1.8; display:none; max-height:220px; overflow-y:auto; flex-shrink:0; }
   .factcheck-report.open { display:block; }
   .factcheck-report-title { font-family:'JetBrains Mono', monospace; font-size:0.6rem; font-weight:600; letter-spacing:1px; color:var(--muted); margin-bottom:8px; text-transform:uppercase; }
@@ -231,7 +214,6 @@
   .draft-word-count { padding:8px 20px; border-top:1px solid var(--border); font-family:'JetBrains Mono', monospace; font-size:0.62rem; color:var(--muted); flex-shrink:0; text-align:right; }
 
   .write-num { font-family:'JetBrains Mono', monospace; font-size:0.8rem; border:1px solid var(--border); background:var(--paper); padding:6px 10px; color:var(--ink); width:90px; outline:none; }
-  .free-textarea { font-family:'Noto Serif SC', serif; font-size:0.85rem; border:1px solid var(--border); background:var(--paper); padding:10px 12px; color:var(--ink); width:100%; outline:none; resize:vertical; line-height:1.6; }
 </style>
 </head>
 <body>
@@ -244,7 +226,7 @@
   <div class="masthead-meta">
     <div id="clockDisplay">--:--:--</div>
     <div id="dateDisplay">---- -- --</div>
-    <div style="margin-top:2px;color:var(--accent);font-weight:600">全网热点 · 深度分析</div>
+    <div style="margin-top:2px;color:var(--accent);font-weight:600">全网热榜 · 深度分析</div>
   </div>
 </div>
 
@@ -356,7 +338,7 @@
 <div class="draft-overlay" id="draftOverlay" onclick="closeDraftOnBg(event)">
   <div class="draft-box">
     <div class="draft-header">
-      <div class="draft-header-title" id="draftTitle">正在写稿…</div>
+      <div class="draft-header-title" id="draftTitle">正在处理...</div>
       <div class="draft-header-actions">
         <button class="btn-factcheck" id="btnFactcheck" onclick="startFactcheck()" disabled>🔍 核查事实</button>
         <button class="btn-copy" onclick="copyDraft()">复制全文</button>
@@ -393,11 +375,9 @@ function saveKey(v) {
 
 function switchProvider(p) {
   localStorage.setItem('ai_provider', p);
-  document.querySelectorAll('.cat-btn').forEach(btn => {
-    if (['claude','deepseek','gemini'].includes(btn.id.replace('provider','').toLowerCase())) {
-        btn.classList.toggle('active', btn.id.toLowerCase() === 'provider' + p);
-    }
-  });
+  document.getElementById('providerClaude').classList.toggle('active', p === 'claude');
+  document.getElementById('providerDeepseek').classList.toggle('active', p === 'deepseek');
+  document.getElementById('providerGemini').classList.toggle('active', p === 'gemini');
   
   const label = document.getElementById('keyLabel');
   const input = document.getElementById('claudeKey');
@@ -469,7 +449,7 @@ async function callClaude(apiKey, prompt, maxTokens) {
   const provider = getProvider();
   let model = 'claude-3-5-sonnet-20240620';
   if (provider === 'deepseek') model = 'deepseek-chat';
-  if (provider === 'gemini') model = 'gemini-1.5-pro';
+  if (provider === 'gemini') model = 'gemini-1.5-flash'; // 核心修复：改用最稳定的 Flash 模型
 
   const res = await fetch('/api/claude', {
     method: 'POST',
@@ -483,21 +463,21 @@ async function callClaude(apiKey, prompt, maxTokens) {
 
 async function analyzeWithClaude(items, apiKey) {
   const titles = items.map((it, i) => `${i+1}. [${it._sourceName}] ${it.title}`).join('\n');
-  const prompt = `评估以下话题评论价值，筛选出 20 个得分>=7的话题。优先社会民生、财经与商业。
-  返回JSON: {"selected": [{"index": 1, "rating": 5, "category": "社会", "angles": ["角度1", "角度2"]}]}
-  列表：\n${titles}`;
+  const prompt = `评估以下话题评论价值，筛选出 20 个得分>=7的话题。优先社会民生、财经与商业。返回JSON: {"selected": [{"index": 1, "rating": 5, "category": "社会", "angles": ["角度1", "角度2"]}]}\n列表：\n${titles}`;
   const text = await callClaude(apiKey, prompt, 4000);
   return JSON.parse(text.replace(/```json|```/g, '').trim());
 }
 
 async function getResearchContext(apiKey, title, angle) {
-  const prompt = `针对选题【${title}】和角度【${angle}】，提供背景信息。含事实、行业逻辑、社会背景。严禁抒情。`;
+  const prompt = `针对选题【${title}】和角度【${angle}】，提供背景信息。含事实、行业逻辑、社会背景。`;
   return await callClaude(apiKey, prompt, 1500);
 }
 
 // ── UI ACTIONS ──
 async function startAnalysis() {
-  const key = document.getElementById('claudeKey').value.trim();
+  const key = (getProvider() === 'gemini' ? localStorage.getItem('gemini_key') : 
+              getProvider() === 'deepseek' ? localStorage.getItem('deepseek_key') : 
+              localStorage.getItem('claude_key')) || '';
   if (!key) return alert('请填入 Key');
   document.getElementById('statusBar').textContent = '分析中...';
   try {
@@ -516,7 +496,7 @@ function renderResults(items, analysis) {
   selected.forEach((s, i) => {
     const item = items[s.index-1];
     if (!item) return;
-    window._topicData[i] = { title: item.title, angles: s.angles, url: item.url };
+    window._topicData[i] = { title: item.title, angles: s.angles };
     html += `<div class="topic-card">
       <div class="card-rank">${i+1}</div>
       <div class="card-body">
@@ -564,19 +544,19 @@ function submitFromDialog() {
 }
 
 async function openDraftAndWrite({ title, angle, persona, style, wordcount }) {
-  const key = document.getElementById('claudeKey').value.trim();
+  const key = (getProvider() === 'gemini' ? localStorage.getItem('gemini_key') : 
+              getProvider() === 'deepseek' ? localStorage.getItem('deepseek_key') : 
+              localStorage.getItem('claude_key')) || '';
   const overlay = document.getElementById('draftOverlay');
   overlay.classList.add('open');
   document.getElementById('draftTitle').textContent = title;
-  document.getElementById('draftBody').innerHTML = '<div class="draft-loading">Phase 1: 正在检索深度背景素材...</div>';
+  document.getElementById('draftBody').innerHTML = '<div class="draft-loading">正在检索深度背景素材...</div>';
   
-  const personas = {
-    editor: "主流情绪", conservative: "保守派", radical: "激进派", scholar: "中立学者"
-  };
+  const personas = { editor: "主流情绪", conservative: "保守派", radical: "激进派", scholar: "中立学者" };
 
   try {
     const research = await getResearchContext(key, title, angle);
-    document.getElementById('draftBody').innerHTML = '<div class="draft-loading">Phase 2: 正在创作深度稿件...</div>';
+    document.getElementById('draftBody').innerHTML = '<div class="draft-loading">正在创作深度稿件...</div>';
     
     let prompt = `你是【${personas[persona]}】。基于以下资料写一篇${wordcount}字评论。资料：${research}。选题：${title}。角度：${angle}。要求：逻辑有力，消除套话。`;
     if (style === 'oped') prompt = `写一篇深度 Op-Ed。反共识、硬核术语、流体结构。资料：${research}`;
@@ -590,7 +570,9 @@ async function openDraftAndWrite({ title, angle, persona, style, wordcount }) {
 }
 
 async function startFactcheck() {
-  const key = document.getElementById('claudeKey').value.trim();
+  const key = (getProvider() === 'gemini' ? localStorage.getItem('gemini_key') : 
+              getProvider() === 'deepseek' ? localStorage.getItem('deepseek_key') : 
+              localStorage.getItem('claude_key')) || '';
   const text = document.getElementById('draftBody').textContent;
   const btn = document.getElementById('btnFactcheck');
   const itemsEl = document.getElementById('factcheckItems');
