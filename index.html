@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>时评雷达 · 事实驱动完整版</title>
+<title>时评雷达 · 事实驱动版</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Noto+Serif+SC:wght@400;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -125,6 +125,7 @@
             <select id="freePersona" class="write-num">
                 <option value="reporter">冷峻记者 (客观叙事)</option>
                 <option value="editor">主流情绪 (公约数视角)</option>
+                <option value="scholar">中立学者 (理论与结构驱动)</option>
                 <option value="radical">激进派 (批判既得利益)</option>
             </select>
         </div>
@@ -166,6 +167,7 @@
                 <select id="diagPersona" class="write-num">
                     <option value="reporter">冷峻记者</option>
                     <option value="editor">主流情绪</option>
+                    <option value="scholar">中立学者</option>
                     <option value="radical">激进派</option>
                 </select>
             </div>
@@ -198,10 +200,13 @@
             <div id="factcheckItems"></div>
         </div>
         
-        <div style="padding:15px 25px; text-align:right; background:var(--cream); border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
-            <div id="wordCount" style="font-family:monospace; font-size:0.7rem; color:var(--muted)"></div>
+        <div style="padding:15px 25px; background:var(--cream); border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:15px;">
+                <div id="draftMetaInfo" style="font-family:monospace; font-size:0.75rem; color:var(--gold); font-weight:600;"></div>
+                <div id="wordCount" style="font-family:monospace; font-size:0.7rem; color:var(--muted)"></div>
+            </div>
             <div style="display:flex; gap:10px;">
-                <button id="btnFactcheck" class="cat-btn" onclick="startFactcheck()" disabled style="border-color:var(--green); color:var(--green); padding:8px 15px; font-size:0.7rem">🔍 核对原文及近期新闻</button>
+                <button id="btnFactcheck" class="cat-btn" onclick="startFactcheck()" disabled style="border-color:var(--green); color:var(--green); padding:8px 15px; font-size:0.7rem">🔍 核查事实与溯源</button>
                 <button class="btn-fetch" onclick="copyDraft()" style="padding:8px 20px;">复制纯文本正文</button>
             </div>
         </div>
@@ -211,7 +216,8 @@
 <script>
 window._topicData = {};
 window._pendingCorrections = [];
-window._currentSourceContent = ""; // 核心：专门保存当前文章抓取到的事实原文
+window._currentSourceContent = ""; // 保存抓取到的原始内容
+window._currentSourceUrl = "";     // 保存原链接供核查直接跳转
 
 function updateClock() { document.getElementById('clockDisplay').textContent = new Date().toLocaleString('zh-CN', {hour12:false}); }
 setInterval(updateClock, 1000); updateClock();
@@ -378,7 +384,13 @@ async function executeWorkflow(title, angle, style, persona, wordcount, url, sou
     document.getElementById('btnFactcheck').disabled = true;
     document.getElementById('btnRevise').classList.remove('active');
     window._pendingCorrections = [];
-    window._currentSourceContent = ""; // 初始化
+    window._currentSourceContent = ""; 
+    window._currentSourceUrl = url || ""; 
+
+    // 设置底部状态信息
+    const styleMap = { fact_first: '新闻实录', pipeline: '六段式', oped: 'Op-Ed' };
+    const personaMap = { reporter: '冷峻记者', editor: '主流情绪', scholar: '中立学者', conservative: '保守派', radical: '激进派' };
+    document.getElementById('draftMetaInfo').textContent = `[ 模式: ${styleMap[style] || style} | 立场: ${personaMap[persona] || persona} ]`;
 
     if (url && url.startsWith('http')) {
         try {
@@ -386,7 +398,7 @@ async function executeWorkflow(title, angle, style, persona, wordcount, url, sou
             const jinaRes = await fetch('https://r.jina.ai/' + url);
             if (jinaRes.ok) {
                 const rawText = await jinaRes.text();
-                window._currentSourceContent = rawText.substring(0, 5000); // 保存下来供后续核查比对
+                window._currentSourceContent = rawText.substring(0, 5000); 
             }
         } catch(e) { console.warn("Jina 抓取失败", e); }
     } else {
@@ -410,6 +422,8 @@ async function executeWorkflow(title, angle, style, persona, wordcount, url, sou
         const personasDesc = {
             reporter: "冷峻的特稿记者 (白描手法，拒绝情绪词汇)",
             editor: "主流情绪观察员",
+            scholar: "中立学者 (结构与理论分析)",
+            conservative: "保守派 (秩序与传统)",
             radical: "激进派 (打破既得利益结构)"
         };
         
@@ -422,7 +436,7 @@ async function executeWorkflow(title, angle, style, persona, wordcount, url, sou
 2. 严禁使用 Markdown 加粗符号（**）。禁止使用“让人痛心”、“我们要...”等公文套话。`;
 
         if(style === 'fact_first') {
-            prompt += "\n模式：新闻实录。请将 60% 的篇幅用于复述素材中的事实细节，分析评论需要一针见血，不多说废话。";
+            prompt += "\n模式：新闻实录。请将 60% 的篇幅用于复述素材中的事实细节，分析应中肯而犀利，不说废话和空洞的理论术语。";
         } else if(style === 'pipeline') {
             prompt += "\n结构：特写破题、逻辑拆解、利益关联、金句定调、溯源追问、升华结尾。";
         } else if(style === 'oped') {
@@ -444,7 +458,7 @@ async function startFactcheck() {
     document.getElementById('btnRevise').classList.remove('active');
     window._pendingCorrections = []; 
     
-    itemsEl.innerHTML = '<div style="font-family:monospace; color:var(--gold)">正在提取事实，基于原文素材与百度新闻检索进行双重比对...</div>';
+    itemsEl.innerHTML = '<div style="font-family:monospace; color:var(--gold)">正在提取事实，基于原文素材与关联检索进行双重比对...</div>';
     
     try {
         const key = localStorage.getItem(getProvider() + '_key');
@@ -477,25 +491,41 @@ ${sourceContext}
         let html = '';
         lines.forEach((line, index) => {
             const p = line.split('|');
-            if(line.startsWith('ERROR|')) {
+            
+            // 如果存在抓取的源链接，则使用源链接，否则回退到百度搜索
+            let targetLink = '';
+            let linkText = '';
+            
+            if (line.startsWith('ERROR|')) {
                 const searchKeyword = p[4] || p[1];
-                // 核心修改：使用百度资讯新闻搜索，并加上按时间排序的参数
-                const realSearchLink = `https://news.baidu.com/ns?word=${encodeURIComponent(searchKeyword + ' ' + timeStr)}&clk=sortbytime`;
+                if (window._currentSourceUrl && window._currentSourceUrl.startsWith('http')) {
+                    targetLink = window._currentSourceUrl;
+                    linkText = `🔗 前往抓取原文对照`;
+                } else {
+                    targetLink = `https://news.baidu.com/ns?word=${encodeURIComponent(searchKeyword + ' ' + timeStr)}&clk=sortbytime`;
+                    linkText = `📰 百度新闻(按时间)溯源：${searchKeyword}`;
+                }
                 
-                window._pendingCorrections.push({ original: p[1], corrected: p[2], sourceLink: realSearchLink, id: index });
+                window._pendingCorrections.push({ original: p[1], corrected: p[2], sourceLink: targetLink, id: index });
                 
                 html += `<div class="fact-item">
                     <div class="fact-original">✗ 错误：${p[1]}</div>
                     <div class="fact-corrected">✓ 修正建议：${p[2]}</div>
-                    <a class="fact-link" href="${realSearchLink}" target="_blank">📰 点击通过百度新闻(按时间排序)核实：${searchKeyword}</a>
+                    <a class="fact-link" href="${targetLink}" target="_blank">${linkText}</a>
                 </div>`;
             } else if (line.startsWith('OK|')) {
                 const searchKeyword = p[2] || p[1];
-                const realSearchLink = `https://news.baidu.com/ns?word=${encodeURIComponent(searchKeyword + ' ' + timeStr)}&clk=sortbytime`;
+                if (window._currentSourceUrl && window._currentSourceUrl.startsWith('http')) {
+                    targetLink = window._currentSourceUrl;
+                    linkText = `🔗 依据原文核实`;
+                } else {
+                    targetLink = `https://news.baidu.com/ns?word=${encodeURIComponent(searchKeyword + ' ' + timeStr)}&clk=sortbytime`;
+                    linkText = `📰 百度新闻(按时间)溯源：${searchKeyword}`;
+                }
                 
                 html += `<div class="fact-ok">
                     ✓ 核实一致：${p[1]}
-                    <br><a class="fact-link" href="${realSearchLink}" target="_blank" style="margin-top:5px; margin-bottom:10px">📰 点击通过百度新闻(按时间排序)溯源：${searchKeyword}</a>
+                    <br><a class="fact-link" href="${targetLink}" target="_blank" style="margin-top:5px; margin-bottom:10px">${linkText}</a>
                 </div>`;
             }
         });
@@ -517,7 +547,7 @@ async function applyRevisions() {
     const originalText = document.getElementById('draftBody').innerText;
     
     const correctionRules = window._pendingCorrections.map((c, i) => 
-        `规则 ${i+1}: 将错误描述 "${c.original}" 替换为 "${c.corrected}"，并在其后紧贴插入HTML角标：<a class="citation-link" href="${c.sourceLink}" target="_blank" title="点击跳转外部新闻检索">[${i+1}]</a>`
+        `规则 ${i+1}: 将错误描述 "${c.original}" 替换为 "${c.corrected}"，并在其后紧贴插入HTML角标：<a class="citation-link" href="${c.sourceLink}" target="_blank" title="点击跳转验证信源">[${i+1}]</a>`
     ).join('\n');
 
     const prompt = `你是排版编辑。根据规则修改原文。只输出修改后的全文（包含插入的HTML角标），绝对不要使用**加粗，保留换行。
