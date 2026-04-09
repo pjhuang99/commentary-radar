@@ -65,6 +65,15 @@
   .write-num { font-family:'JetBrains Mono', monospace; font-size:0.8rem; border:1px solid var(--border); padding:10px; background:var(--paper); outline:none; width:100%; transition: background-color 0.3s;}
   .btn-revise { background: var(--green); color: white; border: none; padding: 6px 15px; font-family: monospace; font-weight: 700; cursor: pointer; display: none; }
   .btn-revise.active { display: inline-block; animation: pulse 2s infinite; }
+
+  /* 事实简报专用样式 */
+  .brief-container { background: var(--paper); border: 1px solid var(--gold); padding: 20px; margin-bottom: 20px; position: relative; animation: fadeIn 0.4s ease; }
+  .brief-tag { position: absolute; top: -12px; left: 20px; background: var(--gold); color: white; padding: 2px 10px; font-size: 0.65rem; font-family: monospace; }
+  .brief-content { font-family: 'Noto Serif SC', serif; line-height: 1.8; color: var(--ink); outline: none; padding: 10px; border: 1px dashed transparent; }
+  .brief-content:focus { border-color: var(--gold); background: #fffcf5; }
+  .brief-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border); }
+  .brief-hint { font-size: 0.75rem; color: var(--muted); font-style: italic; }
+
   @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
 </style>
 </head>
@@ -216,8 +225,9 @@
 <script>
 window._topicData = {};
 window._pendingCorrections = [];
-window._currentSourceContent = ""; // 保存抓取到的原始内容
-window._currentSourceUrl = "";     // 保存原链接供核查直接跳转
+window._currentSourceContent = ""; 
+window._currentSourceUrl = "";     
+window._workflowContext = {}; // 用于存储分步执行时的上下文
 
 function updateClock() { document.getElementById('clockDisplay').textContent = new Date().toLocaleString('zh-CN', {hour12:false}); }
 setInterval(updateClock, 1000); updateClock();
@@ -251,22 +261,10 @@ async function callClaude(apiKey, prompt, maxTokens) {
 function fillFreeWrite(btn) {
     const title = btn.getAttribute('data-title');
     const url = btn.getAttribute('data-url');
-    
     document.getElementById('freeTitle').value = title;
     document.getElementById('freeUrl').value = url;
     document.getElementById('freeAngle').value = '';
-    
     document.getElementById('freeWriteSection').scrollIntoView({ behavior: 'smooth' });
-    
-    const titleInput = document.getElementById('freeTitle');
-    const urlInput = document.getElementById('freeUrl');
-    titleInput.style.backgroundColor = 'rgba(184, 134, 11, 0.2)';
-    urlInput.style.backgroundColor = 'rgba(184, 134, 11, 0.2)';
-    
-    setTimeout(() => {
-        titleInput.style.backgroundColor = 'var(--paper)';
-        urlInput.style.backgroundColor = 'var(--paper)';
-    }, 600);
 }
 
 async function startAnalysis() {
@@ -278,23 +276,17 @@ async function startAnalysis() {
         const results = await Promise.all(SOURCES.map(s => fetch(`https://daily-hot-api-vercel-mu.vercel.app/${s.key}`).then(r => r.json()).catch(()=>({data:[]}))));
         const allItems = results.flatMap((r, i) => (r.data || []).map(item => ({...item, _sourceName: SOURCES[i].name})));
         
-        const groups = {};
-        allItems.forEach(it => { if(!groups[it._sourceName]) groups[it._sourceName]=[]; groups[it._sourceName].push(it); });
-        
-        document.getElementById('rawList').innerHTML = Object.entries(groups).map(([name, list]) => 
-            `<div class="raw-platform-header">${name}</div>` + 
-            list.slice(0,15).map((it, i) => `
+        document.getElementById('rawList').innerHTML = allItems.slice(0, 50).map((it, i) => `
             <div class="raw-item">
                 <span class="raw-rank">${i+1}</span>
                 <a href="${it.url}" target="_blank" class="raw-title">${it.title}</a>
                 <button class="raw-write-btn" onclick="fillFreeWrite(this)" data-title="${it.title.replace(/"/g, '&quot;')}" data-url="${it.url}">写这篇</button>
-            </div>`).join('')
-        ).join('');
+            </div>`).join('');
         
         document.getElementById('statTotal').textContent = allItems.length + '条';
 
         const titles = allItems.slice(0, 100).map((it, i) => `${i+1}. [${it._sourceName}] ${it.title}`).join('\n');
-        const prompt = `请从以下榜单筛选出 20 个最适合写深度评论或新闻实录的话题。返回JSON格式: {"selected": [{"index":序号, "angles":["深度视角1", "深度视角2"]}]}\n列表：\n${titles}`;
+        const prompt = `请从以下榜单筛选出 15 个最适合写深度评论的话题。返回JSON: {"selected": [{"index":序号, "angles":["深度视角1", "深度视角2"]}]}\n列表：\n${titles}`;
         
         const text = await callClaude(key, prompt, 4000);
         const analysis = JSON.parse(text.replace(/```json|```/g, '').trim());
@@ -319,22 +311,10 @@ async function startAnalysis() {
 
 function openWriteDialog(idx) {
     const data = window._topicData[idx];
-    if(!data) return alert('数据加载失败');
     window._currentIdx = idx;
     document.getElementById('dialogTitle').textContent = data.title;
-    
-    let html = data.angles.map((a, i) => 
-        `<label style="display:block; margin-bottom:10px; cursor:pointer; font-size:0.9rem"><input type="checkbox" name="angleCheck" value="${i}" ${i===0?'checked':''}> ${a}</label>`
-    ).join('');
-    html += `<label style="display:block; margin-bottom:10px; cursor:pointer; font-size:0.9rem"><input type="checkbox" id="customAngleToggle"> 自定义补充视角...</label>`;
-    html += `<input type="text" id="customAngleInput" class="write-num" style="display:none; width:100%; margin-bottom:10px" placeholder="输入要补充的视角，将与上方勾选项融合...">`;
-    
+    let html = data.angles.map((a, i) => `<label style="display:block; margin-bottom:10px; cursor:pointer;"><input type="checkbox" name="angleCheck" value="${i}" ${i===0?'checked':''}> ${a}</label>`).join('');
     document.getElementById('dialogAngles').innerHTML = html;
-    
-    document.getElementById('customAngleToggle').onchange = function() {
-        document.getElementById('customAngleInput').style.display = this.checked ? 'block' : 'none';
-    };
-    
     document.getElementById('writeDialog').style.display = 'flex';
 }
 
@@ -342,44 +322,31 @@ function closeWriteDialog() { document.getElementById('writeDialog').style.displ
 
 async function submitFromDialog() {
     const data = window._topicData[window._currentIdx];
-    
     let selectedAngles = [];
-    document.querySelectorAll('input[name="angleCheck"]:checked').forEach(cb => {
-        selectedAngles.push(data.angles[cb.value]);
-    });
-    if(document.getElementById('customAngleToggle').checked) {
-        const customVal = document.getElementById('customAngleInput').value.trim();
-        if(customVal) selectedAngles.push(customVal);
-    }
-    if(selectedAngles.length === 0) return alert('请至少勾选或填写一个写作视角！');
+    document.querySelectorAll('input[name="angleCheck"]:checked').forEach(cb => selectedAngles.push(data.angles[cb.value]));
     
-    const combinedAngle = selectedAngles.join('；同时融合：');
     const style = document.getElementById('diagStyle').value;
     const persona = document.getElementById('diagPersona').value;
     const wordcount = document.getElementById('diagWordcount').value;
-
     closeWriteDialog();
-    executeWorkflow(data.title, combinedAngle, style, persona, wordcount, data.url, data.sourceName);
+    executeWorkflow(data.title, selectedAngles.join('；'), style, persona, wordcount, data.url, data.sourceName);
 }
 
 function submitFreeWrite() {
     const t = document.getElementById('freeTitle').value.trim(); 
     const a = document.getElementById('freeAngle').value.trim();
     if(!t) return alert('请填入标题');
-    
-    const style = document.getElementById('freeStyle').value;
-    const persona = document.getElementById('freePersona').value;
-    const wordcount = document.getElementById('freeWordcount').value;
-    const url = document.getElementById('freeUrl').value.trim();
-
-    executeWorkflow(t, a || '依据客观事实展开论述', style, persona, wordcount, url, '外部链接');
+    executeWorkflow(t, a || '中立视角', document.getElementById('freeStyle').value, document.getElementById('freePersona').value, document.getElementById('freeWordcount').value, document.getElementById('freeUrl').value.trim(), '外部素材');
 }
 
+/* 核心优化：分阶段执行流 */
 async function executeWorkflow(title, angle, style, persona, wordcount, url, sourceName) {
     const overlay = document.getElementById('draftOverlay');
     overlay.classList.add('open');
     document.getElementById('draftTitle').textContent = title;
     const body = document.getElementById('draftBody');
+    
+    // 初始化
     document.getElementById('factcheckReport').style.display = 'none';
     document.getElementById('btnFactcheck').disabled = true;
     document.getElementById('btnRevise').classList.remove('active');
@@ -387,187 +354,123 @@ async function executeWorkflow(title, angle, style, persona, wordcount, url, sou
     window._currentSourceContent = ""; 
     window._currentSourceUrl = url || ""; 
 
-    // 设置底部状态信息
-    const styleMap = { fact_first: '新闻实录', pipeline: '六段式', oped: 'Op-Ed' };
-    const personaMap = { reporter: '冷峻记者', editor: '主流情绪', scholar: '中立学者', conservative: '保守派', radical: '激进派' };
-    document.getElementById('draftMetaInfo').textContent = `[ 模式: ${styleMap[style] || style} | 立场: ${personaMap[persona] || persona} ]`;
-
-    if (url && url.startsWith('http')) {
-        try {
-            body.innerHTML = `<div style="text-align:center; padding:50px; font-family:monospace; color:var(--gold)">PHASE 1: 正在跨域读取原始新闻网页素材...<br><span style="font-size:0.7rem; color:var(--muted)">目标源: ${sourceName || '未知'}</span></div>`;
-            const jinaRes = await fetch('https://r.jina.ai/' + url);
-            if (jinaRes.ok) {
-                const rawText = await jinaRes.text();
-                window._currentSourceContent = rawText.substring(0, 5000); 
-            }
-        } catch(e) { console.warn("Jina 抓取失败", e); }
-    } else {
-        body.innerHTML = '<div style="text-align:center; padding:50px; font-family:monospace; color:var(--gold)">PHASE 1: 未提供链接，正在基于内部知识库检索事实...</div>';
-    }
+    // 保存上下文供第二阶段使用
+    window._workflowContext = { title, angle, style, persona, wordcount, sourceName };
 
     try {
-        const key = localStorage.getItem(getProvider() + '_key');
-        
-        let researchPrompt = `你是一位深度调查记者。针对选题【${title}】和视角【${angle}】，请基于以下提供的【原始参考素材】提取最鲜活的新闻细节。`;
-        if (sourceName === '今日头条') {
-            researchPrompt += `\n注意：该素材可能来自话题聚合页，请提取涉及的多方观点、最新进展和核心事实清单。`;
-        } else {
-            researchPrompt += `\n注意：请重点提取文章中的 5W1H 事实清单、场景还原和核心数据。`;
+        if (url && url.startsWith('http')) {
+            body.innerHTML = `<div style="text-align:center; padding:50px; font-family:monospace; color:var(--gold)">PHASE 1: 正在跨域提取素材...</div>`;
+            const jinaRes = await fetch('https://r.jina.ai/' + url);
+            if (jinaRes.ok) {
+                window._currentSourceContent = (await jinaRes.text()).substring(0, 6000); 
+            }
         }
-        researchPrompt += `\n【原始参考素材】：\n${window._currentSourceContent || '无外部素材，请依赖内部数据库'}\n\n严禁主观评价，只列客观事实，字数500字内。`;
         
-        const research = await callClaude(key, researchPrompt, 1500);
-        body.innerHTML = '<div style="text-align:center; padding:50px; font-family:monospace; color:var(--green)">PHASE 2: 网页事实已结构化完毕，正在进行深度排版创作...</div>';
-        
+        const key = localStorage.getItem(getProvider() + '_key');
+        body.innerHTML = `<div style="text-align:center; padding:50px; font-family:monospace; color:var(--gold)">PHASE 2: 正在生成事实简报 (Fact Brief)...</div>`;
+
+        // 提炼事实简报
+        let researchPrompt = `你是一位深度调查记者。针对选题【${title}】，请从提供的素材中提炼核心事实清单。
+要求：提取核心数据、时间线、关键人物言论及争议点。保持绝对中立，删除所有评价性词汇。按逻辑模块列出，总字数不超过 600 字。
+素材：\n${window._currentSourceContent || '请基于你的内部知识库'}`;
+
+        const facts = await callClaude(key, researchPrompt, 1500);
+
+        // 渲染简报核验界面
+        body.innerHTML = `
+            <div class="brief-container">
+                <div class="brief-tag">STEP 1: 事实简报核验</div>
+                <div class="brief-content" id="editableFacts" contenteditable="true">${facts.replace(/\n/g, '<br>')}</div>
+                <div class="brief-footer">
+                    <div class="brief-hint">※ 您可以在上方直接修改事实点，AI 将基于修改后的内容进行创作</div>
+                    <button class="btn-fetch" onclick="continueToFinalDraft()" style="background:var(--green)">确认事实并开始创作 ▶</button>
+                </div>
+            </div>
+            <div style="color:var(--muted); font-size:0.8rem; text-align:center;">当前立场配置：${persona}</div>
+        `;
+    } catch(e) { body.innerHTML = `<div style="color:var(--accent)">前置提取失败: ${e.message}</div>`; }
+}
+
+async function continueToFinalDraft() {
+    const body = document.getElementById('draftBody');
+    const confirmedFacts = document.getElementById('editableFacts').innerText;
+    const ctx = window._workflowContext;
+    const key = localStorage.getItem(getProvider() + '_key');
+
+    body.innerHTML = `<div style="text-align:center; padding:50px; font-family:monospace; color:var(--green)">PHASE 3: 事实已确认，正在进行深度排版创作...</div>`;
+
+    try {
         const personasDesc = {
             reporter: "冷峻的特稿记者 (白描手法，拒绝情绪词汇)",
             editor: "主流情绪观察员",
             scholar: "中立学者 (结构与理论分析)",
-            conservative: "保守派 (秩序与传统)",
-            radical: "激进派 (打破既得利益结构)"
+            radical: "激进派 (批判既得利益结构)"
         };
-        
-        let prompt = `你是【${personasDesc[persona]}】。基于以下【深度素材】写一篇约${wordcount}字文章。
-【深度素材】${research}
-【选题】${title} | 【多维融合视角】${angle}
 
-【重要指令】：
-1. 请务必在正文最开头，提供 3 个具有吸引力且侧重点不同的文章备选标题（格式为：【备选标题一】... 【备选标题二】... 【备选标题三】...），然后再开始正文内容。
-2. 严禁使用 Markdown 加粗符号（**）。禁止使用“让人痛心”、“我们要...”等公文套话。`;
+        let prompt = `你是【${personasDesc[ctx.persona] || ctx.persona}】。请基于以下【核准事实】进行深度评论写作。
+【核准事实】：${confirmedFacts}
+【选题】：${ctx.title} | 【视角】：${ctx.angle}
+【目标字数】：${ctx.wordcount} | 【模式】：${ctx.style}
 
-        if(style === 'fact_first') {
-            prompt += "\n模式：新闻实录。请将 60% 的篇幅用于复述素材中的事实细节，分析应中肯而犀利，不说废话和空洞的理论术语。";
-        } else if(style === 'pipeline') {
-            prompt += "\n结构：特写破题、逻辑拆解、利益关联、金句定调、溯源追问、升华结尾。";
-        } else if(style === 'oped') {
-            prompt += "\n模式：深度 Op-Ed。反共识视角，使用学术/行业硬核术语实现智识压制，流体思维自然展开。";
-        }
+重要：1. 严禁修改核准事实中的核心数据。2. 正文前提供3个备选标题。3. 严禁使用加粗。`;
 
         const raw = await callClaude(key, prompt, 4000);
-        const cleaned = raw.replace(/\*\*/g, '');
-        
-        body.innerHTML = cleaned.replace(/\n/g, '<br>');
-        document.getElementById('wordCount').textContent = cleaned.length + ' 字符';
+        body.innerHTML = raw.replace(/\*\*/g, '').replace(/\n/g, '<br>');
+        document.getElementById('wordCount').textContent = body.innerText.length + ' 字符';
         document.getElementById('btnFactcheck').disabled = false;
+        body.scrollTop = 0;
     } catch(e) { body.innerHTML = `<div style="color:var(--accent)">生成失败: ${e.message}</div>`; }
 }
 
+/* 事实核查与溯源逻辑 */
 async function startFactcheck() {
     const itemsEl = document.getElementById('factcheckItems');
     document.getElementById('factcheckReport').style.display = 'block';
-    document.getElementById('btnRevise').classList.remove('active');
     window._pendingCorrections = []; 
-    
-    itemsEl.innerHTML = '<div style="font-family:monospace; color:var(--gold)">正在提取事实，基于原文素材与关联检索进行双重比对...</div>';
+    itemsEl.innerHTML = '<div style="font-family:monospace; color:var(--gold)">正在核查硬事实...</div>';
     
     try {
         const key = localStorage.getItem(getProvider() + '_key');
-        const now = new Date();
-        const timeStr = now.getFullYear() + "年" + (now.getMonth() + 1) + "月";
+        const prompt = `你是一个事实核查机器。请核对文章中的数据、时间、人物表述是否与素材一致。
+格式：ERROR|原句|建议修改|搜索词 OR OK|原句|搜索词
+素材：${window._currentSourceContent || '内部知识'}
+文章：${document.getElementById('draftBody').innerText}`;
         
-        const sourceContext = window._currentSourceContent ? `【原始新闻参考素材（请作为事实核对的首要基准）】：\n${window._currentSourceContent}\n\n` : '';
-
-        const prompt = `你是一个极度严苛的事实核查机器。请基于我提供的【原始新闻参考素材】（如果有的话），核对以下评论文章中的硬性事实（如数据、时间线、人物事件）。
-【时间限制】：所有外部事实都应处于“最近两周”的新闻语境（目前是 ${timeStr}）。
-
-【操作方式】：如果与【原始新闻参考素材】冲突，请直接指出错误。如果原文未提及，但你认为需要验证，请提取用于验证的“极简新闻搜索词”。
-“极简搜索词”仅限2-3个核心名词（如：“网暴 检察日报”）。绝对不能包含URL链接。
-
-严格按以下格式输出（使用|分割）：
-ERROR|草稿中的错误表述|正确的事实应该是什么|发现错误的原因|极简搜索词
-OK|草稿中的正确表述|极简搜索词
-
-${sourceContext}
-评论文章草稿内容：\n${document.getElementById('draftBody').innerText}`;
+        const report = await callClaude(key, prompt, 2000);
+        const lines = report.split('\n').filter(l => l.startsWith('ERROR|') || l.startsWith('OK|'));
         
-        const report = await callClaude(key, prompt, 3000);
-        const lines = report.split('\n').filter(l => l.trim() && (l.startsWith('ERROR|') || l.startsWith('OK|')));
-        
-        if (lines.length === 0) {
-            itemsEl.innerHTML = `<div style="color:var(--muted)">模型未按规范返回数据，原始内容：<br>${report}</div>`;
-            return;
-        }
-
         let html = '';
         lines.forEach((line, index) => {
             const p = line.split('|');
-            
-            // 如果存在抓取的源链接，则使用源链接，否则回退到百度搜索
-            let targetLink = '';
-            let linkText = '';
-            
             if (line.startsWith('ERROR|')) {
-                const searchKeyword = p[4] || p[1];
-                if (window._currentSourceUrl && window._currentSourceUrl.startsWith('http')) {
-                    targetLink = window._currentSourceUrl;
-                    linkText = `🔗 前往抓取原文对照`;
-                } else {
-                    targetLink = `https://news.baidu.com/ns?word=${encodeURIComponent(searchKeyword + ' ' + timeStr)}&clk=sortbytime`;
-                    linkText = `📰 百度新闻(按时间)溯源：${searchKeyword}`;
-                }
-                
-                window._pendingCorrections.push({ original: p[1], corrected: p[2], sourceLink: targetLink, id: index });
-                
-                html += `<div class="fact-item">
-                    <div class="fact-original">✗ 错误：${p[1]}</div>
-                    <div class="fact-corrected">✓ 修正建议：${p[2]}</div>
-                    <a class="fact-link" href="${targetLink}" target="_blank">${linkText}</a>
-                </div>`;
-            } else if (line.startsWith('OK|')) {
-                const searchKeyword = p[2] || p[1];
-                if (window._currentSourceUrl && window._currentSourceUrl.startsWith('http')) {
-                    targetLink = window._currentSourceUrl;
-                    linkText = `🔗 依据原文核实`;
-                } else {
-                    targetLink = `https://news.baidu.com/ns?word=${encodeURIComponent(searchKeyword + ' ' + timeStr)}&clk=sortbytime`;
-                    linkText = `📰 百度新闻(按时间)溯源：${searchKeyword}`;
-                }
-                
-                html += `<div class="fact-ok">
-                    ✓ 核实一致：${p[1]}
-                    <br><a class="fact-link" href="${targetLink}" target="_blank" style="margin-top:5px; margin-bottom:10px">${linkText}</a>
-                </div>`;
+                const link = `https://news.baidu.com/ns?word=${encodeURIComponent(p[3] || p[1])}`;
+                window._pendingCorrections.push({ original: p[1], corrected: p[2], sourceLink: link });
+                html += `<div class="fact-item"><div class="fact-original">✗ ${p[1]}</div><div class="fact-corrected">✓ ${p[2]}</div><a class="fact-link" href="${link}" target="_blank">🔗 外部验证</a></div>`;
+            } else {
+                html += `<div class="fact-ok">✓ 核实一致：${p[1]}</div>`;
             }
         });
-        
-        itemsEl.innerHTML = html;
+        itemsEl.innerHTML = html || '未发现明显事实错误。';
         if (window._pendingCorrections.length > 0) document.getElementById('btnRevise').classList.add('active');
-        
-    } catch(e) { itemsEl.innerHTML = `<div style="color:var(--accent)">核查异常: ${e.message}</div>`; }
+    } catch(e) { itemsEl.innerHTML = '核查失败'; }
 }
 
 async function applyRevisions() {
-    if (window._pendingCorrections.length === 0) return;
-    
     const btn = document.getElementById('btnRevise');
-    btn.textContent = '⚡ 正在替换错误并嵌入来源角标...';
-    btn.classList.remove('active');
-    
+    btn.textContent = '修订中...';
     const key = localStorage.getItem(getProvider() + '_key');
-    const originalText = document.getElementById('draftBody').innerText;
-    
-    const correctionRules = window._pendingCorrections.map((c, i) => 
-        `规则 ${i+1}: 将错误描述 "${c.original}" 替换为 "${c.corrected}"，并在其后紧贴插入HTML角标：<a class="citation-link" href="${c.sourceLink}" target="_blank" title="点击跳转验证信源">[${i+1}]</a>`
-    ).join('\n');
-
-    const prompt = `你是排版编辑。根据规则修改原文。只输出修改后的全文（包含插入的HTML角标），绝对不要使用**加粗，保留换行。
-规则：\n${correctionRules}\n\n原文：\n${originalText}`;
-
+    const rules = window._pendingCorrections.map((c, i) => `将 "${c.original}" 替换为 "${c.corrected}" 并加角标 [${i+1}]`).join('\n');
+    const prompt = `执行以下修订规则，直接输出全文：\n${rules}\n\n原文：\n${document.getElementById('draftBody').innerText}`;
     try {
-        const revisedRaw = await callClaude(key, prompt, 4000);
-        const cleaned = revisedRaw.replace(/\*\*/g, '');
-        document.getElementById('draftBody').innerHTML = cleaned.replace(/\n/g, '<br>');
-        btn.textContent = '✓ 自动修订已完成';
-        btn.style.background = 'var(--border)';
-    } catch(e) {
-        alert('修订失败: ' + e.message);
-        btn.textContent = '⚡ 应用修订并添加角标';
-        btn.classList.add('active');
-    }
+        const res = await callClaude(key, prompt, 4000);
+        document.getElementById('draftBody').innerHTML = res.replace(/\n/g, '<br>');
+        btn.textContent = '✓ 修订完成';
+        btn.classList.remove('active');
+    } catch(e) { alert('修订失败'); }
 }
 
 function closeDraft() { document.getElementById('draftOverlay').classList.remove('open'); }
-function copyDraft() { navigator.clipboard.writeText(document.getElementById('draftBody').innerText); alert('已复制纯文本内容'); }
+function copyDraft() { navigator.clipboard.writeText(document.getElementById('draftBody').innerText); alert('已复制'); }
 window.onload = () => switchProvider(getProvider());
 </script>
 </body>
