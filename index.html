@@ -7,103 +7,26 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Noto+Serif+SC:wght@400;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --ink:     #1a1208;
-    --paper:   #f5f0e8;
-    --cream:   #ede8dc;
-    --accent:  #c8371a;
-    --gold:    #b8860b;
-    --muted:   #7a6f5e;
-    --border:  #c9bfaa;
-    --green:   #1a7a4a;
-    --blue:    #1a3a7a;
-  }
-
+  :root { --ink: #1a1208; --paper: #f5f0e8; --cream: #ede8dc; --accent: #c8371a; --gold: #b8860b; --muted: #7a6f5e; --border: #c9bfaa; --green: #1a7a4a; --blue: #1a3a7a; }
   * { margin:0; padding:0; box-sizing:border-box; }
-
-  body {
-    background: var(--paper);
-    color: var(--ink);
-    font-family: 'Noto Serif SC', serif;
-    min-height: 100vh;
-  }
-
-  body::before {
-    content:'';
-    position:fixed; inset:0;
-    background-image: repeating-linear-gradient(
-      0deg, transparent, transparent 27px,
-      rgba(180,160,120,0.12) 27px, rgba(180,160,120,0.12) 28px
-    );
-    pointer-events:none; z-index:0;
-  }
-
-  /* ── MASTHEAD ── */
-  .masthead {
-    border-bottom: 3px double var(--ink);
-    padding: 18px 40px 14px;
-    display: flex; align-items: baseline; justify-content: space-between;
-    background: var(--paper); z-index:1; position:relative;
-  }
-  .masthead-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 2.6rem; font-weight:900; letter-spacing:-1px; line-height:1;
-  }
+  body { background: var(--paper); color: var(--ink); font-family: 'Noto Serif SC', serif; min-height: 100vh; }
+  body::before { content:''; position:fixed; inset:0; background-image: repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(180,160,120,0.12) 27px, rgba(180,160,120,0.12) 28px); pointer-events:none; z-index:0; }
+  .masthead { border-bottom: 3px double var(--ink); padding: 18px 40px 14px; display: flex; align-items: baseline; justify-content: space-between; background: var(--paper); z-index:1; position:relative; }
+  .masthead-title { font-family: 'Playfair Display', serif; font-size: 2.6rem; font-weight:900; letter-spacing:-1px; line-height:1; }
   .masthead-title span { color: var(--accent); }
-  .masthead-meta {
-    text-align:right;
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.72rem; color:var(--muted); line-height:1.7;
-  }
-
-  /* ── TOOLBAR ── */
-  .toolbar {
-    padding: 12px 40px;
-    border-bottom: 1px solid var(--border);
-    background: var(--cream);
-    display:flex; align-items:center; gap:16px;
-    position:sticky; top:0; z-index:10;
-  }
-  .btn-fetch {
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.75rem; font-weight:600;
-    background: var(--ink); color: var(--paper);
-    border:none; padding:8px 20px; cursor:pointer;
-    transition: background 0.15s;
-  }
+  .masthead-meta { text-align:right; font-family:'JetBrains Mono', monospace; font-size:0.72rem; color:var(--muted); line-height:1.7; }
+  .toolbar { padding: 12px 40px; border-bottom: 1px solid var(--border); background: var(--cream); display:flex; align-items:center; gap:16px; position:sticky; top:0; z-index:10; }
+  .btn-fetch { font-family:'JetBrains Mono', monospace; font-size:0.75rem; font-weight:600; background: var(--ink); color: var(--paper); border:none; padding:8px 20px; cursor:pointer; transition: background 0.15s; }
   .btn-fetch:hover { background: var(--accent); }
   .btn-fetch:disabled { background: var(--border); cursor:not-allowed; }
-
-  .key-input-wrap {
-    display:flex; align-items:center; gap:8px; flex:1; max-width:420px;
-  }
-  .key-input {
-    font-family:'JetBrains Mono', monospace; font-size:0.7rem;
-    border: 1px solid var(--border); background: var(--paper);
-    padding:6px 10px; color:var(--ink); flex:1; outline:none;
-  }
-
-  .status-bar {
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.65rem; color:var(--muted); margin-left:auto;
-  }
-
-  /* ── LAYOUT ── */
-  .layout {
-    display:grid; grid-template-columns: 1fr 340px;
-    gap:0; position:relative; z-index:1;
-    min-height: calc(100vh - 120px);
-  }
+  .key-input-wrap { display:flex; align-items:center; gap:8px; flex:1; max-width:420px; }
+  .key-input { font-family:'JetBrains Mono', monospace; font-size:0.7rem; border: 1px solid var(--border); background: var(--paper); padding:6px 10px; flex:1; outline:none; }
+  .status-bar { font-family:'JetBrains Mono', monospace; font-size:0.65rem; color:var(--muted); margin-left:auto; }
+  .layout { display:grid; grid-template-columns: 1fr 340px; min-height: calc(100vh - 120px); position:relative; z-index:1; }
   .main-col { padding: 28px 36px; border-right:1px solid var(--border); }
   .side-col { padding:24px 24px; }
-
-  .section-header {
-    display:flex; align-items:baseline; justify-content:space-between;
-    border-bottom: 2px solid var(--ink); padding-bottom:8px; margin-bottom:20px;
-  }
+  .section-header { display:flex; align-items:baseline; justify-content:space-between; border-bottom: 2px solid var(--ink); padding-bottom:8px; margin-bottom:20px; }
   .section-title { font-family:'Playfair Display', serif; font-size:1.1rem; font-weight:700; letter-spacing:0.5px; }
-
-  /* ── CARD ── */
   .topic-card { padding: 16px 0; border-bottom: 1px solid rgba(180,160,120,0.3); display:grid; grid-template-columns: 36px 1fr; gap:12px; animation: fadeIn 0.3s ease both; }
   @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
   .card-rank { font-family:'Playfair Display', serif; font-size:1.4rem; font-weight:900; color:var(--border); line-height:1; }
@@ -112,41 +35,32 @@
   .card-angles { display:flex; flex-direction:column; gap:5px; margin-top:8px;}
   .angle-item { display:flex; align-items:flex-start; gap:8px; font-size:0.85rem; line-height:1.6; color:var(--ink); margin-top:5px; }
   .angle-num { font-family:'JetBrains Mono', monospace; font-size:0.6rem; color:var(--paper); background: var(--muted); padding:1px 5px; margin-top:3px; flex-shrink:0; }
-
-  /* ── SIDEBAR ── */
   .raw-platform-header { font-family:'JetBrains Mono', monospace; font-size:0.6rem; font-weight:600; color:var(--paper); background:var(--ink); padding:3px 8px; margin:15px 0 5px; }
   .raw-item { display:flex; align-items:baseline; gap:10px; padding:6px 0; border-bottom:1px solid rgba(0,0,0,0.05); font-size:0.75rem; }
   .raw-rank { font-family:'JetBrains Mono', monospace; font-size:0.62rem; color:var(--border); width:18px; flex-shrink:0; }
   .raw-title { color:var(--ink); flex:1; text-decoration:none; }
   .raw-title:hover { color:var(--accent); text-decoration:underline; }
-
-  /* ── FREE WRITE & GRID (样式恢复) ── */
   .free-write-section { border-top:3px double var(--ink); padding:40px 36px; background:var(--cream); position:relative; z-index:1; }
   .free-write-grid { display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-top:16px; }
   .free-write-full { grid-column:1/-1; }
   .field-label { font-family:'JetBrains Mono', monospace; font-size:0.65rem; color:var(--muted); margin-bottom:8px; display:block; text-transform:uppercase; letter-spacing:1px; }
-  
-  /* ── DRAFT OVERLAY ── */
   .draft-overlay { position:fixed; inset:0; background:rgba(26,18,8,0.95); z-index:100; display:none; align-items:center; justify-content:center; padding:24px; }
   .draft-overlay.open { display:flex; }
   .draft-box { background:var(--paper); width:100%; max-width:850px; max-height:92vh; display:flex; flex-direction:column; border:2px solid var(--ink); box-shadow: 0 30px 60px rgba(0,0,0,0.4); }
   .draft-header { padding:16px 24px; border-bottom:2px solid var(--ink); display:flex; align-items:center; justify-content:space-between; background:var(--paper); }
   .draft-body { padding:30px; overflow-y:auto; flex:1; font-size:1.05rem; line-height:2.2; white-space:pre-wrap; font-family:'Noto Serif SC', serif;}
-  
   .factcheck-report { padding:20px; border-top:1px solid var(--border); background:var(--cream); font-size:0.8rem; display:none; max-height:300px; overflow-y:auto; }
   .fact-item { margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid rgba(0,0,0,0.1); }
   .fact-original { color:var(--accent); text-decoration:line-through; margin-bottom:6px; font-size:0.85rem;}
   .fact-corrected { color:var(--green); font-weight:600; margin-bottom:6px; font-size:0.85rem;}
-  .fact-link { color:var(--blue); text-decoration:underline; font-size:0.8rem; display:inline-block; margin-top:2px; }
+  .fact-link { color:var(--blue); text-decoration:none; font-size:0.8rem; display:inline-block; margin-top:2px; background: rgba(26,58,122,0.05); padding:2px 6px; border-radius:3px; }
+  .fact-link:hover { background: rgba(26,58,122,0.1); text-decoration:underline; }
   .fact-ok { color:var(--green); font-size:0.85rem; margin-bottom:8px;}
-  
   .citation-link { color:var(--blue); text-decoration:none; font-size:0.75rem; vertical-align:super; font-family:monospace; margin:0 2px; font-weight:bold;}
   .citation-link:hover { text-decoration:underline; }
-  
   .cat-btn { font-family:'JetBrains Mono', monospace; font-size:0.62rem; font-weight:600; padding:5px 15px; cursor:pointer; border:1px solid var(--border); background:transparent; transition:all 0.2s;}
   .cat-btn.active { background:var(--ink); color:var(--paper); }
   .write-num { font-family:'JetBrains Mono', monospace; font-size:0.8rem; border:1px solid var(--border); padding:10px; background:var(--paper); outline:none; width:100%;}
-  
   .btn-revise { background: var(--green); color: white; border: none; padding: 6px 15px; font-family: monospace; font-weight: 700; cursor: pointer; display: none; }
   .btn-revise.active { display: inline-block; animation: pulse 2s infinite; }
   @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
@@ -278,7 +192,7 @@
             <div id="wordCount" style="font-family:monospace; font-size:0.7rem; color:var(--muted)"></div>
             <div style="display:flex; gap:10px;">
                 <button id="btnFactcheck" class="cat-btn" onclick="startFactcheck()" disabled style="border-color:var(--green); color:var(--green); padding:8px 15px; font-size:0.7rem">🔍 核查事实与链接溯源</button>
-                <button class="btn-fetch" onclick="copyDraft()" style="padding:8px 20px;">复制正文内容</button>
+                <button class="btn-fetch" onclick="copyDraft()" style="padding:8px 20px;">复制纯文本正文</button>
             </div>
         </div>
     </div>
@@ -355,18 +269,15 @@ async function startAnalysis() {
     } catch(e) { alert(e.message); document.getElementById('statusBar').textContent = '分析失败'; }
 }
 
-// ── 恢复多选视角逻辑 ──
 function openWriteDialog(idx) {
     const data = window._topicData[idx];
     if(!data) return alert('数据加载失败');
     window._currentIdx = idx;
     document.getElementById('dialogTitle').textContent = data.title;
     
-    // 生成 Checkbox 列表
     let html = data.angles.map((a, i) => 
         `<label style="display:block; margin-bottom:10px; cursor:pointer; font-size:0.9rem"><input type="checkbox" name="angleCheck" value="${i}" ${i===0?'checked':''}> ${a}</label>`
     ).join('');
-    // 添加自定义输入框
     html += `<label style="display:block; margin-bottom:10px; cursor:pointer; font-size:0.9rem"><input type="checkbox" id="customAngleToggle"> 自定义补充视角...</label>`;
     html += `<input type="text" id="customAngleInput" class="write-num" style="display:none; width:100%; margin-bottom:10px" placeholder="输入要补充的视角，将与上方勾选项融合...">`;
     
@@ -384,7 +295,6 @@ function closeWriteDialog() { document.getElementById('writeDialog').style.displ
 async function submitFromDialog() {
     const data = window._topicData[window._currentIdx];
     
-    // 获取多选视角
     let selectedAngles = [];
     document.querySelectorAll('input[name="angleCheck"]:checked').forEach(cb => {
         selectedAngles.push(data.angles[cb.value]);
@@ -408,7 +318,6 @@ function submitFreeWrite() {
     executeWorkflow(t, a, document.getElementById('freeStyle').value, document.getElementById('freePersona').value);
 }
 
-// ── 核心工作流：事实驱动写稿 ──
 async function executeWorkflow(title, angle, style, persona) {
     const overlay = document.getElementById('draftOverlay');
     overlay.classList.add('open');
@@ -423,7 +332,6 @@ async function executeWorkflow(title, angle, style, persona) {
     try {
         const key = localStorage.getItem(getProvider() + '_key');
         
-        // 强化第一阶段的事实挖掘
         const researchPrompt = `你是一位调查记者。针对选题【${title}】和视角【${angle}】，提取最鲜活的新闻细节。
         包含：1. 5W1H事实清单（时间、地点、人名、确切数据）。 2. 具有现场感的动作或场景还原。 3. 相关行业常识。
         严禁任何主观评价，只列客观事实，字数500字内。`;
@@ -443,10 +351,10 @@ async function executeWorkflow(title, angle, style, persona) {
 【深度素材】${research}
 【选题】${title} | 【多维融合视角】${angle}
 
-【重要禁忌】：严禁使用 Markdown 加粗符号（**）。禁止使用“随着...的发展”、“让人痛心”等公文或情绪套话。`;
+【重要禁忌】：严禁使用 Markdown 加粗符号（**）。禁止使用“令人痛心”、“我们要...”等公文或情绪套话。`;
 
         if(style === 'fact_first') {
-            prompt += "\n模式：新闻实录。请将 70% 的篇幅用于复述素材中的事实细节，分析应点到为止或放在文末。";
+            prompt += "\n模式：新闻实录。请将 60% 的篇幅用于复述素材中的事实细节，分析应点到为止或放在文末。";
         } else if(style === 'pipeline') {
             prompt += "\n结构：特写破题、逻辑拆解、利益关联、金句定调、溯源追问、升华结尾。";
         } else if(style === 'oped') {
@@ -454,11 +362,8 @@ async function executeWorkflow(title, angle, style, persona) {
         }
 
         const raw = await callClaude(key, prompt, 4000);
-        
-        // 核心修复：彻底剔除 Markdown 粗体符号
         const cleaned = raw.replace(/\*\*/g, '');
         
-        // 渲染文本，保留换行
         body.innerHTML = cleaned.replace(/\n/g, '<br>');
         document.getElementById('draftTitle').textContent = title;
         document.getElementById('wordCount').textContent = cleaned.length + ' 字符';
@@ -466,23 +371,26 @@ async function executeWorkflow(title, angle, style, persona) {
     } catch(e) { body.innerHTML = `<div style="color:var(--accent)">生成失败: ${e.message}</div>`; }
 }
 
-// ── 事实核查与外部信源追踪 ──
+// ── 核心修复：停止幻觉伪造URL，改为输出搜索引流的关键词 ──
 async function startFactcheck() {
     const itemsEl = document.getElementById('factcheckItems');
     document.getElementById('factcheckReport').style.display = 'block';
     document.getElementById('btnRevise').classList.remove('active');
     window._pendingCorrections = []; 
     
-    itemsEl.innerHTML = '<div style="font-family:monospace; color:var(--gold)">正在提取事实，并从全网抓取权威外部新闻链接进行比对...</div>';
+    itemsEl.innerHTML = '<div style="font-family:monospace; color:var(--gold)">正在提取事实，并构建基于必应（Bing）的精准溯源搜索词...</div>';
     
     try {
         const key = localStorage.getItem(getProvider() + '_key');
-        const prompt = `核查以下文章的事实真实性。
-非常重要：对于每一个核查点，必须提供一个真实存在的外部权威新闻网链接（如 sina.com.cn, reuters.com）。绝对不能使用形如 commentary-radar.vercel.app 这种本地系统链接。
+        
+        // 要求大模型停止自己捏造URL，改为输出精准的“搜索词”，我们用代码包装成合法的搜索引擎链接
+        const prompt = `你是一个极度严苛的事实核查机器。请核查以下评论文章的事实真实性。
+【绝对禁止】：不要试图输出包含 "http" 的静态新闻链接，因为你无法联网验证，这会导致 404 错误。
+【正确做法】：对于每一个核查点，提供权威的【参考媒体名称】（如新华社、路透社），以及可以直接在搜索引擎上核实该事实的【精准核实搜索词】（例如："2023年 国家统计局 城镇调查失业率"）。
 
-严格按以下格式输出（每行一个）：
-ERROR|原文错误表述|正确的事实描述|发现错误的原因|权威新闻标题|权威外部URL
-OK|已核实的事实描述|权威新闻标题|权威外部URL
+严格按以下格式输出（每行一个，使用|分割）：
+ERROR|原文错误表述|正确的事实描述|发现错误的原因|权威媒体名称|精准核实搜索词
+OK|已核实的事实描述|权威媒体名称|精准核实搜索词
 
 文章内容：\n${document.getElementById('draftBody').innerText}`;
         
@@ -498,23 +406,26 @@ OK|已核实的事实描述|权威新闻标题|权威外部URL
         lines.forEach((line, index) => {
             const p = line.split('|');
             if(line.startsWith('ERROR|')) {
-                const title = p[4] && p[4].length > 2 ? p[4] : '参考来源';
-                const link = p[5] && p[5].startsWith('http') ? p[5] : '#';
+                const sourceName = p[4] || '权威信源';
+                const searchKeyword = p[5] || p[1];
+                // 将大模型输出的搜索词包装成真实的 Bing 搜索链接
+                const realSearchLink = `https://www.bing.com/search?q=${encodeURIComponent(sourceName + ' ' + searchKeyword)}`;
                 
-                // 加入待修订队列
-                window._pendingCorrections.push({ original: p[1], corrected: p[2], sourceTitle: title, sourceLink: link, id: index });
+                window._pendingCorrections.push({ original: p[1], corrected: p[2], sourceTitle: sourceName, sourceLink: realSearchLink, id: index });
                 
                 html += `<div class="fact-item">
                     <div class="fact-original">✗ 错误：${p[1]}</div>
-                    <div class="fact-corrected">✓ 建议：${p[2]}</div>
-                    <a class="fact-link" href="${link}" target="_blank">🔗 信源：${title}</a>
+                    <div class="fact-corrected">✓ 应为：${p[2]}</div>
+                    <a class="fact-link" href="${realSearchLink}" target="_blank">🔍 点击此处通过 Bing 搜索核实验证</a>
                 </div>`;
             } else if (line.startsWith('OK|')) {
-                const title = p[2] && p[2].length > 2 ? p[2] : '参考来源';
-                const link = p[3] && p[3].startsWith('http') ? p[3] : '#';
+                const sourceName = p[2] || '权威信源';
+                const searchKeyword = p[3] || p[1];
+                const realSearchLink = `https://www.bing.com/search?q=${encodeURIComponent(sourceName + ' ' + searchKeyword)}`;
+                
                 html += `<div class="fact-ok">
                     ✓ 核实：${p[1]}
-                    <a class="fact-link" href="${link}" target="_blank" style="margin-left:15px">🔗 验证：${title}</a>
+                    <br><a class="fact-link" href="${realSearchLink}" target="_blank" style="margin-top:5px; margin-bottom:10px">🔍 点击此处通过 Bing 搜索核实验证</a>
                 </div>`;
             }
         });
@@ -525,7 +436,6 @@ OK|已核实的事实描述|权威新闻标题|权威外部URL
     } catch(e) { itemsEl.innerHTML = `<div style="color:var(--accent)">核查异常: ${e.message}</div>`; }
 }
 
-// ── 应用智能修订并注入角标 ──
 async function applyRevisions() {
     if (window._pendingCorrections.length === 0) return;
     
@@ -537,15 +447,15 @@ async function applyRevisions() {
     const originalText = document.getElementById('draftBody').innerText;
     
     const correctionRules = window._pendingCorrections.map((c, i) => 
-        `规则 ${i+1}: 将错误描述 "${c.original}" 替换为 "${c.corrected}"，并在其后插入HTML：<a class="citation-link" href="${c.sourceLink}" target="_blank" title="${c.sourceTitle}">[${i+1}]</a>`
+        `规则 ${i+1}: 将错误描述 "${c.original}" 替换为 "${c.corrected}"，并在其后紧贴插入HTML角标：<a class="citation-link" href="${c.sourceLink}" target="_blank" title="验证搜索源：${c.sourceTitle}">[${i+1}]</a>`
     ).join('\n');
 
-    const prompt = `你是排版编辑。根据规则修改原文。只输出修改后的全文（包含HTML角标），绝对不要使用**加粗，保留换行格式。
+    const prompt = `你是排版编辑。根据规则修改原文。只输出修改后的全文（包含插入的HTML角标），绝对不要使用**加粗，保留换行。
 规则：\n${correctionRules}\n\n原文：\n${originalText}`;
 
     try {
         const revisedRaw = await callClaude(key, prompt, 4000);
-        const cleaned = revisedRaw.replace(/\*\*/g, ''); // 再次确保无粗体符号
+        const cleaned = revisedRaw.replace(/\*\*/g, '');
         document.getElementById('draftBody').innerHTML = cleaned.replace(/\n/g, '<br>');
         btn.textContent = '✓ 自动修订已完成';
         btn.style.background = 'var(--border)';
@@ -557,7 +467,7 @@ async function applyRevisions() {
 }
 
 function closeDraft() { document.getElementById('draftOverlay').classList.remove('open'); }
-function copyDraft() { navigator.clipboard.writeText(document.getElementById('draftBody').innerText); alert('已复制纯文本（包含内容和替换好的修订文字）'); }
+function copyDraft() { navigator.clipboard.writeText(document.getElementById('draftBody').innerText); alert('已复制纯文本内容'); }
 window.onload = () => switchProvider(getProvider());
 </script>
 </body>
