@@ -11,10 +11,9 @@ export default async function handler(req, res) {
     let response;
 
     if (provider === 'gemini') {
-      // 使用 gemini-1.5-flash 作为默认值，它更稳定且速度更快
+      // ── 核心修复：切换到 v1beta 接口 ──
       const modelName = payload.model || 'gemini-1.5-flash';
-      // 使用 v1 接口
-      const url = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
       
       response = await fetch(url, {
         method: 'POST',
@@ -34,7 +33,7 @@ export default async function handler(req, res) {
       const data = await response.json();
       if (!response.ok) {
         return res.status(response.status).json({ 
-          error: data.error || { message: "Gemini API 链接失败，请确认模型名称是否正确。" } 
+          error: data.error || { message: "Gemini v1beta 接口报错，请检查 Key 是否有效。" } 
         });
       }
 
@@ -43,6 +42,7 @@ export default async function handler(req, res) {
       });
 
     } else if (provider === 'deepseek') {
+      // DeepSeek 逻辑保持不变
       response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: {
