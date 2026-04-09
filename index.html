@@ -156,23 +156,6 @@
   .card-title a { color:inherit; text-decoration:none; border-bottom:1px solid transparent; }
   .card-title a:hover { color:var(--accent); border-bottom-color:var(--accent); }
 
-  .card-rating {
-    display:inline-flex; align-items:center; gap:6px;
-    margin-bottom:8px;
-  }
-  .rating-stars { letter-spacing:1px; font-size:0.75rem; }
-  .rating-label {
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.6rem; padding:1px 6px;
-    letter-spacing:0.5px; font-weight:600;
-  }
-  .rating-5 .rating-stars { color:#c8371a; }
-  .rating-5 .rating-label { background:#c8371a18; color:#c8371a; border:1px solid #c8371a44; }
-  .rating-4 .rating-stars { color:#b8860b; }
-  .rating-4 .rating-label { background:#b8860b18; color:#b8860b; border:1px solid #b8860b44; }
-  .rating-3 .rating-stars { color:#1a7a4a; }
-  .rating-3 .rating-label { background:#1a7a4a18; color:#1a7a4a; border:1px solid #1a7a4a44; }
-
   .card-angles {
     display:flex; flex-direction:column; gap:5px; margin-top:4px;
   }
@@ -198,99 +181,24 @@
     color:var(--muted); letter-spacing:0.3px;
   }
 
-  .card-heat {
-    display:flex; align-items:center; gap:8px; margin-top:8px;
-  }
-  .heat-bar-track {
-    flex:1; height:3px; background:var(--border);
-    max-width:120px;
-  }
-  .heat-bar-fill { height:100%; background:var(--accent); }
-  .heat-val {
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.6rem; color:var(--muted);
-  }
-
   /* ── SIDEBAR ── */
-  .raw-list { display:flex; flex-direction:column; gap:0; }
-  .raw-item {
-    display:flex; align-items:baseline; gap:10px;
-    padding:9px 0; border-bottom:1px solid rgba(180,160,120,0.2);
-    font-size:0.8rem; line-height:1.4;
-  }
   .raw-platform-header {
     font-family:'JetBrains Mono', monospace;
     font-size:0.6rem; font-weight:600; letter-spacing:1px;
     color:var(--paper); background:var(--ink);
     padding:3px 8px; margin:10px 0 4px;
   }
+  .raw-item {
+    display:flex; align-items:baseline; gap:10px;
+    padding:9px 0; border-bottom:1px solid rgba(180,160,120,0.2);
+    font-size:0.8rem; line-height:1.4;
+  }
   .raw-rank {
     font-family:'JetBrains Mono', monospace;
     font-size:0.62rem; color:var(--border); flex-shrink:0; width:18px;
   }
-  .raw-rank.top { color:var(--accent); font-weight:600; }
   .raw-title { color:var(--ink); flex:1; text-decoration:none; }
   .raw-title:hover { color:var(--accent); text-decoration:underline; }
-  .raw-title.selected { color:var(--accent); font-weight:600; }
-  .raw-skip { color:var(--border); text-decoration:line-through; }
-
-  .empty-state { padding:60px 0; text-align:center; }
-  .empty-icon { font-family:'Playfair Display', serif; font-size:3rem; color:var(--border); margin-bottom:16px; }
-  .empty-msg { font-size:0.85rem; color:var(--muted); line-height:1.8; }
-
-  .progress-wrap { padding:40px 0; display:flex; flex-direction:column; align-items:center; gap:16px; }
-  .progress-label { font-family:'JetBrains Mono', monospace; font-size:0.75rem; color:var(--gold); letter-spacing:1px; }
-  .progress-bar { width:240px; height:3px; background:var(--border); overflow:hidden; }
-  .progress-fill { height:100%; background:var(--accent); animation: progressAnim 1.5s ease-in-out infinite; }
-  @keyframes progressAnim { 0% { width:0%; margin-left:0; } 50% { width:60%; margin-left:20%; } 100% { width:0%; margin-left:100%; } }
-
-  .side-section { margin-bottom:28px; }
-  .side-title {
-    font-family:'JetBrains Mono', monospace;
-    font-size:0.65rem; font-weight:600; letter-spacing:2px;
-    text-transform:uppercase; color:var(--muted);
-    border-bottom:1px solid var(--border);
-    padding-bottom:6px; margin-bottom:12px;
-    display:flex; justify-content:space-between; align-items:center;
-  }
-  .side-badge { font-size:0.58rem; padding:1px 6px; background:var(--ink); color:var(--paper); letter-spacing:0.5px; }
-
-  .stats-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
-  .stat-box { background:var(--cream); border:1px solid var(--border); padding:10px 12px; text-align:center; }
-  .stat-num { font-family:'Playfair Display', serif; font-size:1.6rem; font-weight:700; color:var(--accent); line-height:1; }
-  .stat-label { font-family:'JetBrains Mono', monospace; font-size:0.58rem; color:var(--muted); margin-top:3px; letter-spacing:0.5px; }
-
-  .key-guide { background:var(--cream); border:1px dashed var(--border); padding:12px 14px; font-size:0.75rem; line-height:1.8; color:var(--muted); }
-  .key-guide a { color:var(--accent); }
-  .key-guide strong { color:var(--ink); }
-
-  .cat-filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
-  .cat-btn {
-    font-family:'JetBrains Mono', monospace; font-size:0.62rem; font-weight:600; letter-spacing:0.5px;
-    padding:4px 12px; cursor:pointer; border:1px solid var(--border); background:transparent;
-    color:var(--muted); transition: all 0.15s;
-  }
-  .cat-btn:hover { border-color:var(--ink); color:var(--ink); }
-  .cat-btn.active { background:var(--ink); color:var(--paper); border-color:var(--ink); }
-
-  .btn-write {
-    font-family:'JetBrains Mono', monospace; font-size:0.65rem; font-weight:600; letter-spacing:0.5px;
-    background: transparent; color: var(--gold); border: 1px solid var(--gold); padding:4px 12px;
-    cursor:pointer; margin-top:10px; transition: all 0.15s;
-  }
-  .btn-write:hover { background:var(--gold); color:var(--paper); }
-
-  /* ── FREE WRITE ── */
-  .free-write-section { border-top:3px double var(--ink); padding:28px 36px; position:relative; z-index:1; }
-  .free-write-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px; }
-  .free-write-full { grid-column:1/-1; }
-  .field-label { font-family:'JetBrains Mono', monospace; font-size:0.62rem; color:var(--muted); margin-bottom:5px; letter-spacing:0.5px; display:block; }
-  .free-textarea {
-    font-family:'Noto Serif SC', serif; font-size:0.85rem; border:1px solid var(--border); background:var(--paper);
-    padding:10px 12px; color:var(--ink); width:100%; outline:none; resize:vertical; line-height:1.6;
-  }
-  .free-textarea:focus { border-color:var(--gold); }
-  .write-num { font-family:'JetBrains Mono', monospace; font-size:0.8rem; border:1px solid var(--border); background:var(--paper); padding:6px 10px; color:var(--ink); width:90px; outline:none; }
 
   /* ── DRAFT OVERLAY ── */
   .draft-overlay {
@@ -310,26 +218,20 @@
   .factcheck-report { padding:12px 20px; border-top:1px solid var(--border); background:var(--cream); font-size:0.78rem; line-height:1.8; display:none; max-height:220px; overflow-y:auto; flex-shrink:0; }
   .factcheck-report.open { display:block; }
   .factcheck-report-title { font-family:'JetBrains Mono', monospace; font-size:0.6rem; font-weight:600; letter-spacing:1px; color:var(--muted); margin-bottom:8px; text-transform:uppercase; }
+  
   .fact-item { margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid rgba(180,160,120,0.2); }
-  .fact-item:last-child { border-bottom:none; margin-bottom:0; }
   .fact-original { color:var(--accent); text-decoration:line-through; font-size:0.78rem; margin-bottom:4px; }
   .fact-corrected { color:var(--green); font-weight:600; font-size:0.78rem; margin-bottom:4px; }
   .fact-note { color:var(--muted); font-size:0.72rem; font-style: italic; }
   .fact-ok { color:var(--green); font-size:0.78rem; margin-bottom:6px; display:block; }
-  .btn-close-draft:hover { background:var(--accent); border-color:var(--accent); color:var(--paper); }
+
   .draft-meta { padding:10px 20px; background:var(--cream); border-bottom:1px solid var(--border); font-family:'JetBrains Mono', monospace; font-size:0.62rem; color:var(--muted); display:flex; gap:20px; flex-shrink:0; }
   .draft-body { padding:24px 28px; overflow-y:auto; flex:1; font-size:0.95rem; line-height:2; white-space:pre-wrap; font-family:'Noto Serif SC', serif; }
   .draft-loading { padding:60px 0; text-align:center; font-family:'JetBrains Mono', monospace; font-size:0.75rem; color:var(--gold); letter-spacing:1px; }
   .draft-word-count { padding:8px 20px; border-top:1px solid var(--border); font-family:'JetBrains Mono', monospace; font-size:0.62rem; color:var(--muted); flex-shrink:0; text-align:right; }
 
-  @media (max-width:768px) {
-    .layout { grid-template-columns:1fr; }
-    .masthead { padding:14px 20px; }
-    .masthead-title { font-size:1.8rem; }
-    .toolbar { padding:10px 16px; flex-wrap:wrap; }
-    .main-col { padding:20px 16px; }
-    .side-col { padding:16px; border-top:1px solid var(--border); }
-  }
+  .write-num { font-family:'JetBrains Mono', monospace; font-size:0.8rem; border:1px solid var(--border); background:var(--paper); padding:6px 10px; color:var(--ink); width:90px; outline:none; }
+  .free-textarea { font-family:'Noto Serif SC', serif; font-size:0.85rem; border:1px solid var(--border); background:var(--paper); padding:10px 12px; color:var(--ink); width:100%; outline:none; resize:vertical; line-height:1.6; }
 </style>
 </head>
 <body>
@@ -342,7 +244,7 @@
   <div class="masthead-meta">
     <div id="clockDisplay">--:--:--</div>
     <div id="dateDisplay">---- -- --</div>
-    <div style="margin-top:2px;color:var(--accent);font-weight:600">全网热榜 · 深度分析</div>
+    <div style="margin-top:2px;color:var(--accent);font-weight:600">全网热点 · 深度分析</div>
   </div>
 </div>
 
@@ -378,24 +280,21 @@
         <div class="empty-icon">✦</div>
         <div class="empty-msg">
           点击「开始分析」获取全网热榜<br>
-          AI 将自动筛选高价值选题<br>
-          需要填入 <code>API Key</code>
+          AI 将自动筛选前 20 个高价值选题
         </div>
       </div>
     </div>
   </div>
 
   <div class="side-col">
-    <div class="side-section">
-      <div class="stats-row">
-        <div class="stat-box">
-          <div class="stat-num" id="statTotal">--</div>
-          <div class="stat-label">全网词条</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-num" id="statSelected">--</div>
-          <div class="stat-label">可写话题</div>
-        </div>
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-num" id="statTotal">--</div>
+        <div class="stat-label">全网词条</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num" id="statSelected">--</div>
+        <div class="stat-label">可写话题</div>
       </div>
     </div>
 
@@ -409,52 +308,9 @@
       <div class="key-guide">
         <strong>Claude Key：</strong><br>
         <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a><br><br>
-        <strong>DeepSeek Key：</strong><br>
-        <a href="https://platform.deepseek.com" target="_blank">platform.deepseek.com</a><br><br>
         <strong>Gemini Key：</strong><br>
         <a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a>
       </div>
-    </div>
-  </div>
-</div>
-
-<div class="free-write-section">
-  <div class="section-header">
-    <div class="section-title">自由写稿</div>
-    <div class="section-count">编辑自定义选题与方向</div>
-  </div>
-  <div class="free-write-grid">
-    <div>
-      <label class="field-label">选题 / 话题</label>
-      <input class="free-textarea" id="freeTitle" style="height:42px;resize:none" placeholder="输入话题...">
-    </div>
-    <div>
-      <label class="field-label">文章类型</label>
-      <div style="display:flex;gap:12px;margin-top:4px;">
-        <label style="font-size:0.8rem;"><input type="radio" name="freeWriteStyle" value="pipeline" checked> 社会评论（六段式）</label>
-        <label style="font-size:0.8rem;"><input type="radio" name="freeWriteStyle" value="general"> 通用评论</label>
-        <label style="font-size:0.8rem;"><input type="radio" name="freeWriteStyle" value="oped"> 深度 Op-Ed</label>
-      </div>
-    </div>
-    <div>
-      <label class="field-label">写作立场</label>
-      <select class="write-num" id="freePersona" style="width:100%; height:36px;">
-        <option value="editor">主流情绪（默认）</option>
-        <option value="conservative">保守派</option>
-        <option value="radical">激进派</option>
-        <option value="scholar">中立学者</option>
-      </select>
-    </div>
-    <div>
-      <label class="field-label">目标字数</label>
-      <input class="write-num" id="freeWordcount" type="number" value="1000" min="500" max="3000" step="500" style="width:100%">
-    </div>
-    <div class="free-write-full">
-      <label class="field-label">写作观点</label>
-      <textarea class="free-textarea" id="freeAngle" rows="3" placeholder="描述你的观点..."></textarea>
-    </div>
-    <div class="free-write-full">
-      <button class="btn-submit-write" onclick="submitFreeWrite()" style="font-size:0.8rem;padding:10px 28px">▶ 开始写稿</button>
     </div>
   </div>
 </div>
@@ -466,7 +322,6 @@
       <button onclick="closeWriteDialog()" style="position:absolute;top:16px;right:16px;background:none;border:none;cursor:pointer;">✕</button>
     </div>
     <div style="margin-bottom:12px;">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);margin-bottom:6px;">选题</div>
       <div id="dialogTitle" style="font-size:0.9rem;font-weight:600;line-height:1.5;"></div>
     </div>
     <div style="margin-bottom:12px;">
@@ -494,9 +349,6 @@
       <label style="font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted);">目标字数</label>
       <input id="dialogWordcount" type="number" value="1000" min="500" max="3000" step="500" style="width:90px;height:30px;">
     </div>
-    <div style="margin-bottom:16px;">
-      <textarea id="dialogExtra" rows="2" style="width:100%;outline:none;padding:8px;" placeholder="补充要求..."></textarea>
-    </div>
     <button onclick="submitFromDialog()" style="background:var(--ink);color:var(--paper);padding:10px 28px;border:none;cursor:pointer;font-weight:600;">▶ 开始写稿</button>
   </div>
 </div>
@@ -504,7 +356,7 @@
 <div class="draft-overlay" id="draftOverlay" onclick="closeDraftOnBg(event)">
   <div class="draft-box">
     <div class="draft-header">
-      <div class="draft-header-title" id="draftTitle">正在处理...</div>
+      <div class="draft-header-title" id="draftTitle">正在写稿…</div>
       <div class="draft-header-actions">
         <button class="btn-factcheck" id="btnFactcheck" onclick="startFactcheck()" disabled>🔍 核查事实</button>
         <button class="btn-copy" onclick="copyDraft()">复制全文</button>
@@ -512,14 +364,17 @@
       </div>
     </div>
     <div class="draft-meta" id="draftMeta"></div>
-    <div class="draft-body" id="draftBody"><div class="draft-loading">INITIALIZING...</div></div>
-    <div class="factcheck-report" id="factcheckReport"><div class="factcheck-report-title">📋 事实核查报告</div><div id="factcheckItems"></div></div>
+    <div class="draft-body" id="draftBody"></div>
+    <div class="factcheck-report" id="factcheckReport">
+      <div class="factcheck-report-title">📋 事实核查报告</div>
+      <div id="factcheckItems"></div>
+    </div>
     <div class="draft-word-count" id="draftWordCount"></div>
   </div>
 </div>
 
 <script>
-// ── UTILS ──────────────────────────────────────────────────
+// ── UTILS ──
 function updateClock() {
   const now = new Date();
   document.getElementById('clockDisplay').textContent = now.toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
@@ -527,10 +382,8 @@ function updateClock() {
 }
 setInterval(updateClock, 1000); updateClock();
 
-function loadKey() { return localStorage.getItem('claude_key') || ''; }
 function getProvider() { return localStorage.getItem('ai_provider') || 'claude'; }
 
-// 修改后的 Key 存储逻辑
 function saveKey(v) {
   const p = getProvider();
   if (p === 'deepseek') localStorage.setItem('deepseek_key', v);
@@ -540,9 +393,11 @@ function saveKey(v) {
 
 function switchProvider(p) {
   localStorage.setItem('ai_provider', p);
-  document.getElementById('providerClaude').classList.toggle('active', p === 'claude');
-  document.getElementById('providerDeepseek').classList.toggle('active', p === 'deepseek');
-  document.getElementById('providerGemini').classList.toggle('active', p === 'gemini');
+  document.querySelectorAll('.cat-btn').forEach(btn => {
+    if (['claude','deepseek','gemini'].includes(btn.id.replace('provider','').toLowerCase())) {
+        btn.classList.toggle('active', btn.id.toLowerCase() === 'provider' + p);
+    }
+  });
   
   const label = document.getElementById('keyLabel');
   const input = document.getElementById('claudeKey');
@@ -560,9 +415,7 @@ function switchProvider(p) {
 }
 window.addEventListener('DOMContentLoaded', () => switchProvider(getProvider()));
 
-function setStatus(msg, type='') { const el = document.getElementById('statusBar'); el.textContent = msg; el.className = 'status-bar ' + type; }
-
-// ── DATA FETCHING ──────────────────────────────────────────
+// ── DATA FETCHING ──
 const SOURCES = [
   { key: 'toutiao', name: '今日头条', limit: 20 },
   { key: 'thepaper', name: '澎湃新闻', limit: 15 },
@@ -579,9 +432,7 @@ async function fetchHotList() {
       const res = await fetch(`https://daily-hot-api-vercel-mu.vercel.app/${s.key}`);
       const json = await res.json();
       const items = (json.data || []).slice(0, s.limit).map(item => ({ 
-        ...item, 
-        _sourceName: s.name, 
-        id: s.key + '_' + item.title,
+        ...item, _sourceName: s.name, id: s.key + '_' + item.title,
         url: item.url || item.link || '#'
       }));
       all.push(...items);
@@ -593,15 +444,15 @@ async function fetchHotList() {
 function renderRawList(items, selectedIds) {
   const el = document.getElementById('rawList');
   const groups = {};
-  items.forEach(function(item) {
+  items.forEach(item => {
     const sn = item._sourceName || '其他';
     if (!groups[sn]) groups[sn] = [];
     groups[sn].push(item);
   });
   let html = '';
-  Object.entries(groups).forEach(function([name, gItems]) {
-    html += '<div class="raw-platform-header">' + name + ' · ' + gItems.length + '条</div>';
-    gItems.forEach(function(item, i) {
+  Object.entries(groups).forEach(([name, gItems]) => {
+    html += `<div class="raw-platform-header">${name} · ${gItems.length}条</div>`;
+    gItems.forEach((item, i) => {
       const sel = selectedIds.has(item.id);
       html += `<div class="raw-item">
         <span class="raw-rank ${i<3?'top':''}">${i+1}</span>
@@ -613,7 +464,7 @@ function renderRawList(items, selectedIds) {
   document.getElementById('statTotal').textContent = items.length;
 }
 
-// ── AI LOGIC ──────────────────────────────────────────────
+// ── AI LOGIC ──
 async function callClaude(apiKey, prompt, maxTokens) {
   const provider = getProvider();
   let model = 'claude-3-5-sonnet-20240620';
@@ -623,15 +474,7 @@ async function callClaude(apiKey, prompt, maxTokens) {
   const res = await fetch('/api/claude', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-      apiKey, 
-      provider, 
-      payload: { 
-        model, 
-        max_tokens: maxTokens || 2000, 
-        messages: [{ role: 'user', content: prompt }] 
-      } 
-    })
+    body: JSON.stringify({ apiKey, provider, payload: { model, max_tokens: maxTokens || 4000, messages: [{ role: 'user', content: prompt }] } })
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error?.message || 'API Error');
@@ -640,37 +483,29 @@ async function callClaude(apiKey, prompt, maxTokens) {
 
 async function analyzeWithClaude(items, apiKey) {
   const titles = items.map((it, i) => `${i+1}. [${it._sourceName}] ${it.title}`).join('\n');
-  const prompt = `扮演资深主笔，评估以下话题评论价值。
-  【重要准则】：
-  1. 减少选取纯国际政治，除非有重大国内影响。
-  2. 优先选取：社会民生、具有深度逻辑的财经与商业变动。
-  3. 目标：筛选出 20 个具有分析空间和智识挑战的话题。
-  返回JSON格式: {"selected": [{"index": 1, "rating": 5, "category": "社会", "angles": ["角度1", "角度2"]}]}
-  话题列表：
-  ${titles}`;
+  const prompt = `评估以下话题评论价值，筛选出 20 个得分>=7的话题。优先社会民生、财经与商业。
+  返回JSON: {"selected": [{"index": 1, "rating": 5, "category": "社会", "angles": ["角度1", "角度2"]}]}
+  列表：\n${titles}`;
   const text = await callClaude(apiKey, prompt, 4000);
   return JSON.parse(text.replace(/```json|```/g, '').trim());
 }
 
 async function getResearchContext(apiKey, title, angle) {
-  const prompt = `针对选题【${title}】和角度【${angle}】，提供背景信息。
-  包含：1. 核心新闻事实 2. 行业/经济逻辑（术语如：沉没成本、路径依赖） 3. 社会心理。
-  只给事实和术语，严禁抒情。`;
-  return await callClaude(apiKey, prompt, 1000);
+  const prompt = `针对选题【${title}】和角度【${angle}】，提供背景信息。含事实、行业逻辑、社会背景。严禁抒情。`;
+  return await callClaude(apiKey, prompt, 1500);
 }
 
-// ── UI ACTIONS ────────────────────────────────────────────
+// ── UI ACTIONS ──
 async function startAnalysis() {
-  const provider = getProvider();
   const key = document.getElementById('claudeKey').value.trim();
-  if (!key) return setStatus(`请填入 ${provider.toUpperCase()} Key`, 'error');
-  setStatus('深度筛选中...', 'running');
+  if (!key) return alert('请填入 Key');
+  document.getElementById('statusBar').textContent = '分析中...';
   try {
     const items = await fetchHotList();
     const analysis = await analyzeWithClaude(items, key);
     renderResults(items, analysis);
-    setStatus('分析完成', 'done');
-  } catch(e) { setStatus(e.message, 'error'); }
+    document.getElementById('statusBar').textContent = '分析完成';
+  } catch(e) { document.getElementById('statusBar').textContent = e.message; }
 }
 
 function renderResults(items, analysis) {
@@ -681,13 +516,11 @@ function renderResults(items, analysis) {
   selected.forEach((s, i) => {
     const item = items[s.index-1];
     if (!item) return;
-    window._topicData[i] = { title: item.title, angles: s.angles };
+    window._topicData[i] = { title: item.title, angles: s.angles, url: item.url };
     html += `<div class="topic-card">
       <div class="card-rank">${i+1}</div>
       <div class="card-body">
-        <div class="card-title">
-          <a href="${item.url}" target="_blank">${item.title}</a>
-        </div>
+        <div class="card-title"><a href="${item.url}" target="_blank">${item.title}</a></div>
         <div class="card-angles">${s.angles.map(a => `<div class="angle-item"><span class="angle-text">${a}</span></div>`).join('')}</div>
         <button class="btn-write" onclick="openWriteDialog(${i})">✍ 写这篇</button>
       </div>
@@ -726,52 +559,28 @@ function submitFromDialog() {
   const persona = document.querySelector('input[name="writePersona"]:checked').value;
   const style = document.querySelector('input[name="writeStyle"]:checked').value;
   const count = document.getElementById('dialogWordcount').value;
-  const extra = document.getElementById('dialogExtra').value;
   closeWriteDialog();
-  openDraftAndWrite({ title: data.title, angle, persona, style, wordcount: count, extra });
+  openDraftAndWrite({ title: data.title, angle, persona, style, wordcount: count });
 }
 
-function submitFreeWrite() {
-  const title = document.getElementById('freeTitle').value;
-  const angle = document.getElementById('freeAngle').value;
-  const persona = document.getElementById('freePersona').value;
-  const style = document.querySelector('input[name="freeWriteStyle"]:checked').value;
-  const count = document.getElementById('freeWordcount').value;
-  openDraftAndWrite({ title, angle, persona, style, wordcount: count });
-}
-
-async function openDraftAndWrite({ title, angle, persona, style, wordcount, extra }) {
+async function openDraftAndWrite({ title, angle, persona, style, wordcount }) {
   const key = document.getElementById('claudeKey').value.trim();
   const overlay = document.getElementById('draftOverlay');
   overlay.classList.add('open');
   document.getElementById('draftTitle').textContent = title;
-  document.getElementById('draftBody').innerHTML = '<div class="draft-loading">Phase 1: 正在检索全网深度背景与逻辑素材...</div>';
+  document.getElementById('draftBody').innerHTML = '<div class="draft-loading">Phase 1: 正在检索深度背景素材...</div>';
   
   const personas = {
-    editor: "主流情绪：基于大众最大公约数，文风客观但有态度。",
-    conservative: "保守派：强调稳定、传统秩序和制度成本。",
-    radical: "激进派：批判既得利益，强调社会分配与变革。",
-    scholar: "中立学者：理性冷静，侧重结构性因素和学术模型。"
+    editor: "主流情绪", conservative: "保守派", radical: "激进派", scholar: "中立学者"
   };
 
   try {
     const research = await getResearchContext(key, title, angle);
-    document.getElementById('draftBody').innerHTML = '<div class="draft-loading">Phase 2: 素材已对齐，正在创作深度稿件...</div>';
+    document.getElementById('draftBody').innerHTML = '<div class="draft-loading">Phase 2: 正在创作深度稿件...</div>';
     
-    const isOpEd = style === 'oped';
-    const isPipeline = style === 'pipeline';
-
-    const opedPrompt = `你是一位为顶级媒体撰稿的特约评论员。基于以下资料撰写深度 Op-Ed。
-【资料】${research}
-【选题】${title} | 角度：${angle} | 目标：${wordcount}字。
-要求：1. 反共识。 2. 使用硬核术语（如帕累托改进、邻避效应等）。 3. 消除套话。 4. 结尾智识反思。`;
-
-    const pipelinePrompt = `你是【${personas[persona]}】。结合以下深度资料写一篇评论。
-    资料：${research}
-    选题：${title} | 角度：${angle} | 目标：${wordcount}字。
-    要求：严格按六段式（破题、拆解、关联、定调、拓展、升华）输出。`;
-
-    const prompt = isOpEd ? opedPrompt : (isPipeline ? pipelinePrompt : `基于以下资料写一篇${wordcount}字评论：${research}`);
+    let prompt = `你是【${personas[persona]}】。基于以下资料写一篇${wordcount}字评论。资料：${research}。选题：${title}。角度：${angle}。要求：逻辑有力，消除套话。`;
+    if (style === 'oped') prompt = `写一篇深度 Op-Ed。反共识、硬核术语、流体结构。资料：${research}`;
+    else if (style === 'pipeline') prompt += "严格按六段式输出。";
 
     const text = await callClaude(key, prompt, 4000);
     document.getElementById('draftBody').textContent = text;
@@ -779,10 +588,6 @@ async function openDraftAndWrite({ title, angle, persona, style, wordcount, extr
     document.getElementById('btnFactcheck').disabled = false;
   } catch(e) { document.getElementById('draftBody').textContent = e.message; }
 }
-
-function closeDraft() { document.getElementById('draftOverlay').classList.remove('open'); }
-function closeDraftOnBg(e) { if (e.target === document.getElementById('draftOverlay')) closeDraft(); }
-function copyDraft() { navigator.clipboard.writeText(document.getElementById('draftBody').textContent); }
 
 async function startFactcheck() {
   const key = document.getElementById('claudeKey').value.trim();
@@ -808,6 +613,10 @@ async function startFactcheck() {
     btn.textContent = '核查完成';
   } catch(e) { btn.textContent = '失败'; }
 }
+
+function closeDraft() { document.getElementById('draftOverlay').classList.remove('open'); }
+function closeDraftOnBg(e) { if (e.target === document.getElementById('draftOverlay')) closeDraft(); }
+function copyDraft() { navigator.clipboard.writeText(document.getElementById('draftBody').textContent); }
 </script>
 </body>
 </html>
