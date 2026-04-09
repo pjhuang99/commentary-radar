@@ -8,16 +8,17 @@ export default async function handler(req, res) {
   const { apiKey, payload, provider } = req.body;
 
   try {
+    let response;
+
     if (provider === 'gemini') {
-      // ── 逻辑加固：清理模型名称 ──
-      // 去掉可能存在的 'models/' 前缀，确保 URL 拼接正确
+      // ── Gemini 逻辑增强 ──
       let modelId = payload.model || 'gemini-1.5-flash';
-      modelId = modelId.replace('models/', ''); 
+      // 移除任何多余的前缀
+      modelId = modelId.replace('models/', '');
       
-      // 使用兼容性最强的 v1beta 路径
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
       
-      const response = await fetch(url, {
+      response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -25,46 +26,33 @@ export default async function handler(req, res) {
             role: m.role === 'assistant' ? 'model' : 'user',
             parts: [{ text: m.content }]
           })),
-          generationConfig: {
-            maxOutputTokens: payload.max_tokens || 4000,
-            temperature: 0.7,
-          }
+          generationConfig: { maxOutputTokens: payload.max_tokens || 4000 }
         }),
       });
 
       const data = await response.json();
       if (!response.ok) {
-        // 返回更详细的错误，方便调试
-        return res.status(response.status).json({ 
-          error: data.error || { message: "Gemini 响应异常，请检查 API Key 权限。" } 
-        });
+        const msg = data.error?.message || JSON.stringify(data.error);
+        return res.status(response.status).json({ error: { message: `Gemini报错: ${msg}` } });
       }
-
       return res.status(200).json({
         content: [{ type: 'text', text: data.candidates?.[0]?.content?.parts?.[0]?.text || '' }]
       });
 
     } else if (provider === 'deepseek') {
-      // DeepSeek 逻辑保持不变
-      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      // ── DeepSeek 逻辑 ──
+      response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + apiKey,
-        },
-        body: JSON.stringify({
-          model: 'deepseek-chat',
-          max_tokens: payload.max_tokens || 2000,
-          messages: payload.messages,
-        }),
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+        body: JSON.stringify({ model: 'deepseek-chat', messages: payload.messages }),
       });
       const data = await response.json();
-      return res.status(200).json({
-        content: [{ type: 'text', text: data.choices?.[0]?.message?.content || '' }]
-      });
+      if (!response.ok) return res.status(response.status).json({ error: data.error });
+      return res.status(200).json({ content: [{ type: 'text', text: data.choices?.[0]?.message?.content || '' }] });
+
     } else {
-      // Claude 默认逻辑
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      // ── Claude 逻辑 (增加报错详情) ──
+      response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -74,9 +62,13 @@ export default async function handler(req, res) {
         body: JSON.stringify(payload),
       });
       const data = await response.json();
-      return res.status(response.status).json(data);
+      if (!response.ok) {
+        return res.status(response.status).json({ error: { message: `Claude报错: ${data.error?.message || '未知错误'}` } });
+      }
+      return res.status(200).json(data);
     }
+
   } catch (e) {
-    return res.status(500).json({ error: { message: e.message } });
+    return res.status(500).json({ error: { message: `代理服务器错误: ${e.message}` } });
   }
 }
